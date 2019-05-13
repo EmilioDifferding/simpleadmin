@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="section">
+    <p> Nombre: {{cliente.nombre}}</p>
+    <p>Contacto: {{cliente.contacto}}</p>
+    <p>CUIT: {{cliente.cuit}}</p>
+    <p> Telefolo: {{cliente.telefono}}</p>
+    {% if cliente.email %}
+    <p> E-mail: {{cliente.email}}</p>
+    {% else %}
+    <p> E-mail: {{cliente.mail}}</p>
+    {% endif %}
+    <p>Direccion: {{cliente.direccion}}</p>
+    <p>Comentarios: {{cliente.comentario}}</p>
+    <p class="button subtitle is-primary"><a href="{{url_for('editar_cliente', id=cliente.id)}}" class="has-text-white">Editar</a></p>
+</div>
+<h1 class="title">Saldo A: ${{cliente.saldo_a}}<br>
+Saldo B: ${{cliente.saldo_b}}</h1>
+
+<div class="section">
+    <div class="tabs is-medium is-toggle is-centered">
+        <ul>
+            <li id="v" class="btn is-active"><a onclick="openTab('ventas')">Ventas</a></li>
+            <li id="c" class="btn"><a onclick="openTab('cobros')">Cobranzas</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <table class="table is-hoverable" id="ventas">
+            <thead>
+                <tr>
+                    <th>Fecha - Hora</th>
+                    <th>Cliente</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Compra</th>
+                    <th>Precio Venta</th>
+                    <th>Subtotal</th>
+                    <th>Flete</th>
+                    <th>Total</th>
+                    <th>Utilidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in cliente.ventas %}
+                {% if v.state %}
+                    
+                <tr>
+                    <td><a href="{{url_for('detalle_venta',id=v.id)}}">{{v.fecha.strftime('%d/%m/%y %H:%M')}}</td>
+                        <td>{{v.cliente.nombre}}</td>
+                        <td><a href="{{url_for('detalle_producto', id=v.producto_id)}}">{{v.producto.nombre}}</a></td>
+                        <td>{{v.cantidad}}</td>
+                        <td>$ {{v.pc_u}}</td>
+                        <td>$ {{v.pv_u}}</td>
+                        <td>$ {{v.precio_carga}} </td>
+                        <td>$ {{v.costo_flete}}</td>
+                        <td>$ {{v.monto_total}}</td>
+                        <td>$ {{v.utilidad}}</td>
+                    </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <table id="cobros" class="table is-hoverable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Forma de pago</th>
+                    <th>Tipo factura</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cliente.cobros %}
+                    {% if c.state %}
+                        <tr>
+                            <td>{{c.fecha.strftime('%d/%m/%y - %H:%M')}}</td>
+                            {% if c.forma_pago =='Cheque' %}<td><a href="{{url_for('detalle_cheque', id=c.cheques[0].id)}}">Cheque</a></td>
+                            {% else %}
+                            <td>Efectivo</td>
+                            {% endif %}
+                            <td>{{c.factura}}</td>
+                            <td>{{c.monto}}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock content %}

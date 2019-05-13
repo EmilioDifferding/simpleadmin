@@ -1,0 +1,8 @@
+venv/
+app.db
+SAworkspace.code-workspace
+modulos.txt
+NOTAS.txt
+migrations/
+__pycache__/
+

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Cheques</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Cheque id</th>
+                <th>Numero</th>
+                <th>state</th>
+                <th>importe</th>
+                <th>de tercero</th>
+                <th>Es entrada</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cheques %}
+                <tr>
+                    <td>{{c.id}}</td>
+                    <td>{{c.numero}}</td>
+                    <td>{{c.state}}</td>
+                    <td>{{c.importe}}</td>
+                    <td>{{c.es_de_tercero}}</td>
+                    <td>{{c.es_entrada}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h1>Cheques salida</h1>
+    <table class="table">
+            <thead>
+                <tr>
+                    <th>Cheque id</th>
+                    <th>Numero</th>
+                    <th>state</th>
+                    <th>importe</th>
+                    <th>de tercero</th>
+                    <th>Es entrada</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cheques_out %}
+                    <tr>
+                        <td>{{c.id}}</td>
+                        <td>{{c.numero}}</td>
+                        <td>{{c.state}}</td>
+                        <td>{{c.importe}}</td>
+                        <td>{{c.es_de_tercero}}</td>
+                        <td>{{c.es_entrada}}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h1>Cheques entrada</h1>
+        <table class="table">
+                <thead>
+                    <tr>
+                        <th>Cheque id</th>
+                        <th>Numero</th>
+                        <th>state</th>
+                        <th>importe</th>
+                        <th>de tercero</th>
+                        <th>Es entrada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cheques_in %}
+                        <tr>
+                            <td>{{c.id}}</td>
+                            <td>{{c.numero}}</td>
+                            <td>{{c.state}}</td>
+                            <td>{{c.importe}}</td>
+                            <td>{{c.es_de_tercero}}</td>
+                            <td>{{c.es_entrada}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+{% endblock content %}

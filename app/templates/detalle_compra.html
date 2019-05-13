@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+    <style>
+    dl {
+        margin-bottom:50px;
+    }
+     
+    dl dt {
+        background: mistyrose;
+        color:#fff;
+        float:left; 
+        font-weight:bold; 
+        margin-right:20px; 
+        padding:5px;  
+        width:200px; 
+    }
+     
+    dl dd {
+        margin:2px 0; 
+        padding:5px 0;
+    }
+</style>
+<section class="section">
+    <dl>
+        <dt><strong>Nro de transaccion:</strong></dt>
+        <dd>{{compra.id}}</dd>
+
+        <dt><strong>Proveedor</strong></dt>
+        <dd><a href="{{url_for('detalle_proveedor',id=compra.proveedor.id)}}">{{compra.proveedor.nombre}}</a></dd>
+
+        <dt><strong> Fecha:</strong></dt>
+        <dd>{{compra.fecha.strftime('%d/%m/%y %H:%M')}}</dd>
+        <dt><strong> Producto:</strong></dt>
+        {% if compra.producto.nombre %}
+            <dd>{{compra.producto.nombre}}</dd>
+        {% else %}
+            <dd>Servicio</dd>
+        {% endif %}
+        <dt><strong>cantidad</strong></dt>
+        <dd>{{compra.cantidad}}</dd>
+        <dt><strong>Precio Unitario</strong></dt>
+        <dd>$ {{compra.precio_unitario}}</dd>
+        <dt><strong>Costo Carga</strong></dt>
+        <dd>$ {{compra.precio_carga}}</dd>
+        <dt><strong>Costo flete</strong></dt>
+        <dd>$ {{compra.precio_flete}}</dd>
+        <dt><strong>Monto total de compra</strong></dt>
+        <dd>$ {{ compra.monto_total}}</dd>
+    </dl>
+    <a class="button is-danger" href="{{url_for('borrar_compra', id=compra.id)}}">Eliminar esta compra</a>
+</section>
+{% endblock content %}

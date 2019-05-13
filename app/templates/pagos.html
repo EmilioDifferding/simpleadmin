@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="section">
+    <h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('pagar')}}">Cargar pago a proveedor</a></h5>
+</div>
+
+<table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Nombre Proveedor</th>
+                <th>Concepto</th>
+                <th>Monto</th>
+                <th>Forma de pago</th>
+                <th>Factura</th>
+                <th>id</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pagos %}
+                <tr>
+                <th>{{p.fecha.strftime('%d/%m/%y - %H:%M')}}</th>
+                {% if p.proveedor_id %}
+                    
+                <td><a href="{{url_for('detalle_proveedor', id=p.proveedor_id)}}">{{p.proveedor.nombre}}</a></td>
+                {% else %}
+                <td style="color:red;">Proveedor eliminado</td>
+                {% endif %}
+                <td>{{p.comentario}}</td>
+                <td>$ {{p.monto}}</td>
+                
+                {% if p.forma_pago =='Cheque' %}<td><a href="{{url_for('detalle_cheque', id=p.cheques[0].id)}}">Cheque</a></td>
+                {% else %}
+                <td>Efectivo</td>
+                {% endif %}
+                <td>{{p.factura}}</td>
+                <td><a href="{{url_for('borrar_cobro',id=p.id)}}">{{p.id}}</a></td>
+            </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+{% endblock content %}

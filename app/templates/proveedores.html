@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Direccion</th>
+                <th>Telefono</th>
+                <th>CUIT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in proveedores %}
+                <tr>
+                <th><a href="{{url_for('detalle_proveedor',id=p.id)}}">{{p.nombre}}</th>
+                <td>{{p.direccion}}</td>
+                <td>{{p.telefono}}</td>
+                <td>{{p.cuit}}</td>
+                <td> <a href="{{url_for('editar_proveedor', id=p.id)}}" class="button is-success">editar</a></td>
+        <td> <a href="{{url_for('borrar_proveedor', id=p.id)}}" class="button is-danger"> Borrar</a></td>
+            </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+
+     <h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_proveedor')}}">Cargar proveedor nuevo</a></h5>
+{% endblock content %}

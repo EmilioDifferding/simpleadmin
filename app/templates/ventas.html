@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="section">
+    <a href="{{url_for('listar_ventas_a',factura='a')}}" class="subtitle button">Ventas A</a>
+    <a href="{{url_for('listar_ventas_a',factura='b')}}" class="subtitle button">Ventas B</a>
+    <a href="{{url_for('listar_ventas')}}" class="subtitle button">Todas</a>
+    <table class="table is-hoverable">
+        <thead>
+            <tr>
+                <th>Fecha-Hora</th>
+                <th>Cliente</th>
+                <th>Producto</th>
+                <th class="hidden">$ Compra</th>
+                <th>$ Venta</th>
+                <th>Cantidad</th>
+                <th>$ carga</th>
+                <th>nombre Flete</th>
+                <th>$ flete</th>
+                <th>TOTAL</th>
+                <th class="hidden">Utilidad</th>
+                <th>Factura</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in ventas %}
+            <tr>
+                <td><a href="{{url_for('detalle_venta',id=v.id)}}">{{v.fecha.strftime('%d/%m/%y %H:%M')}}</td>
+                <td><a href="{{url_for('detalle_cliente', id=v.cliente.id)}} ">{{v.cliente.nombre}}</a></td>
+                <td><a href="{{url_for('detalle_producto',id=v.producto.id)}}">{{v.producto.nombre}}</a></td>
+                <td class="hidden">${{v.pc_u}}</td>
+                <td>${{v.pv_u}}</td>
+                <td>{{v.cantidad}}</td>
+                <td>${{v.precio_carga}}</td>
+                {% if v.flete_proveedor %}
+                <td>{{v.flete_proveedor}}</td>
+                {% else %}
+                <td>Sin flete</td>
+                {% endif %}
+                <td>${{v.costo_flete}}</td>
+                <td>${{v.monto_total}}</td>
+                <td class="hidden">${{v.utilidad}}</td>
+                <td>
+                    {% if v.factura_cliente %}
+                    A
+                    {%else%}
+                    B
+                    {% endif %}
+                </td>
+                
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    
+</div>
+
+{% endblock content %}

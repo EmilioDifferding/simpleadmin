@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section">
+    <h1 class="title">Saldo total a proveedores: ${{saldo}}</h1>
+    <h2 class="subtitle"><strong>Saldo total A:</strong> ${{saldo_a}}</h2>
+    <h2 class="subtitle"><strong>Saldo total B:</strong> ${{saldo_b}}</h2>
+
+    <div class="section">
+            <div class="tabs is-medium is-toggle is-centered">
+                <ul>
+                    <li id="v" class="btn is-active"><a onclick="openTab('ventas')">Saldos A</a></li>
+                    <li id="c" class="btn"><a onclick="openTab('cobros')">Saldos B</a></li>
+                </ul>
+            </div>
+            <div class="container">
+                <table class="table is-hoverable" id='ventas'>
+                    <thead>
+                        <tr>
+                            <th>Proveedor</th>
+                            <th>Saldo a la fecha</th>
+                            <th>Saldo Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in proveedores %}
+                        {% if c.state %}
+                        {% if c.saldo_a > 0 or c.saldo_a < 0 %}
+                        <tr>
+                            <td><a href="{{url_for('detalle_proveedor',id=c.id)}}">{{c.nombre}}</a></td>
+                            <td>$ {{c.saldo_a}} </td>
+                            <td>$ {{c.saldo_a + c.saldo_b}}</td>
+                        </tr>
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <table id="cobros" class="table is-hoverable" style="display:none;">
+                    <thead>
+                            <tr>
+                                <th>Proveedor</th>
+                                <th>Saldo a la fecha</th>
+                                <th>Saldo Total</th>
+                            </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in proveedores %}
+                        {% if c.state %}
+                        {% if c.saldo_b > 0 or saldo_b < 0 %}
+                        <tr>
+                            <td><a href="{{url_for('detalle_proveedor',id=c.id)}}">{{c.nombre}}</a></td>
+                            <td>$ {{c.saldo_b}} </td>
+                            <td>$ {{c.saldo_a + c.saldo_b}}</td>
+                        </tr>
+                        {% endif %}
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

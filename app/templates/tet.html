@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% for c in cobro %}
+        <dl>
+            <dt>COBRO</dt>
+            <dl>
+                ID: {{c.id}} <br>
+                CLI_ID: {{c.cliente_id}} <br>
+                CLIENTE: {{c.cliente}} <br>
+                P_ID: {{c.proveedor_id}} <br>
+                PROVEEDOR: {{c.proveedor}} <br>
+                DATE: {{c.fecha}} <br>
+                ENTRADA: {{c.entrada}}
+            </dl>
+        </dl>
+    {% endfor %}
+{% endblock content %}

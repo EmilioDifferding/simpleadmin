@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <title>{{title}}</title>
+</head>
+
+<body>
+        <style>
+                @media print{
+                    .hidden{
+                        display: none;
+                    }
+                    a{
+                        color:black;
+                    }
+                }
+            </style>
+    <header class="hero level is-fluid has-shadow">
+
+        <nav class="navbar" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a class="navbar-item title has-text-dark" href="/">
+                    Simple<span class="has-text-primary">Admin</span>
+                </a>
+            </div>
+            
+            <div id="navbarBasicExample" class="navbar-menu hidden">
+                <div class="navbar-start">
+                    <a href="{{ url_for('listar_ventas') }}" class="navbar-item">
+                        Registro de ventas
+                    </a>
+                    
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Clientes
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a href="{{url_for('listar_clientes')}}" class="navbar-item">Lista de clientes</a>
+                            <a href="{{url_for('cargar_cliente')}}" class="navbar-item">Agregar cliente</a>
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="navbar-item has-dropdown is-hoverable">
+                            <a class="navbar-link">
+                                Proveedores
+                            </a>
+                            <div class="navbar-dropdown">
+                                <a href="{{url_for('listar_proveedores')}}" class="navbar-item">Lista de Proveedores</a>
+                                <a href="{{url_for('cargar_proveedor')}}" class="navbar-item">Agregar proveedor</a>
+                            </div>
+                            
+                    </div>
+                    <div class="navbar-item has-dropdown is-hoverable">
+                            <a class="navbar-link">
+                                Productos
+                            </a>
+                            <div class="navbar-dropdown">
+                                <a href="{{url_for('listar_productos')}}" class="navbar-item">Lista de prouctos</a>
+                                <a href="{{url_for('cargar_producto')}}" class="navbar-item">Agregar producto</a>
+                            </div>
+                            
+                    </div>
+                </div>
+                
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <div class="buttons">
+                            <a class="button is-primary" href="{{url_for('cargar_venta')}}">
+                                <strong>Venta</strong>
+                            </a>
+                            <a href="{{url_for('listar_compras')}}" class="button"><strong>Compras</strong> </a>
+                            <a class="button is-light" href="{{url_for('caja')}}">
+                                Caja
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="hero is-primary has-text-centered">
+        <h2 class="title">{{title}}</h2>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for message in messages %}
+                <div id="message"class="notification is-success">
+                    <button class="delete" onclick="cerrar()"></button>
+                    {{message}}
+                </div>
+            {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        
+    <section class="container">
+        {% block content %}
+    {% endblock content %}
+    </section>
+
+    <footer class="footer">
+        <p class="info">Creado por Ediffer - Concordia - E.R</p>
+    </footer>
+
+    <script>
+            function cerrar(){
+                m = document.getElementById('message');
+                pNode = m.parentNode;
+                pNode.removeChild(m);
+            }
+        </script>
+        <script>
+            let valor =0;
+            const prod = document.getElementById('producto');
+            prod.addEventListener('click',getprice);
+            prod.addEventListener('change',getTotal);
+            
+            const cantidad = document.getElementById('cantidad');
+            cantidad.addEventListener('change',getTotal);
+            
+            const precio_unid= document.getElementById('precio_unitario');
+            precio_unid.addEventListener('change',getTotal);
+            
+            const precio_total =document.getElementById('sub_total');
+            precio_total.addEventListener('change',ventaTotal);
+            const flete = document.getElementById('costo_flete');
+            flete.addEventListener('change',ventaTotal);
+
+        function ventaTotal(){
+            let total = document.getElementById('monto');
+            total.value = parseInt(precio_total.value) + parseInt(flete.value);
+        }
+
+        
+        function getTotal(){
+           // setTimeout(function(){
+
+                getprice();
+                let pu = valor;
+                //pu.value = getprice();
+                //document.getElementById('precio_unitario').value;
+                let c = document.getElementById('cantidad').value;
+                console.log('PU = '+pu+'\nC = '+c);
+                precio_total.value = document.getElementById('precio_unitario').value * document.getElementById('cantidad').value;
+                console.log(precio_total.value);
+            }//,600);
+        //}
+
+        function getprice(){
+            let http = new XMLHttpRequest();
+            http.onreadystatechange = function(){
+                if (this.readyState==4 && this.status == 200){
+                    valor =this.responseText;
+                    document.getElementById('precio_unitario').value = valor;
+                    console.log('GETPRICE VALOR='+valor);
+                }
+            };
+            http.open('GET','/precio/'+prod.value,false);
+            console.log('ESTO ES '+prod.value)
+            http.send();
+        }
+        
+        function openTab(tabName){
+            var i;
+            var x = document.getElementsByClassName('table');
+            var y = document.getElementsByClassName('btn')
+            for (i = 0; i<x.length; i++){
+                x[i].style.display ="none";
+                console.log(x[i].classList)
+            }
+            for (i = 0 ;i<y.length; i++){
+                y[i].classList.toggle('is-active');
+                console.log(y[i].classList);
+            }
+            document.getElementById(tabName).style.display = 'block';
+        }
+
+        </script>
+
+</body>
+</html>

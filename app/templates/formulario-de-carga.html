@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form action="" method="POST" class="section columns form">
+        {{form.hidden_tag()}}
+        <div class="container column">
+
+            {% for campo in form %}
+                <div class="field">
+                {% if campo() != form.submit() and campo() != form.hidden_tag() %}
+                
+                    {{campo.label}}
+                    <p class="control">
+
+                        {{campo()}}
+                    </p>
+                    {% endif %}
+                    {% for e in campo.errors %}
+                        <span>[{{e}}]</span>
+                    {% endfor %}
+    
+                </div>
+                {% endfor %}
+        </div>
+        <div class="column">
+            <p>{{form.submit()}}</p>
+            
+            <a href="{{atras}}" class="button subtitle is-primary has-text-light" >atras</a>
+        </div>
+</form>
+
+{% endblock content %}
+
+
+
+
+    <form action="" method="POST" class="columns form">
+            {{form.hidden_tag()}}
+            <div class="column">
+    
+                {% for campo in form %}
+                    <p>
+                    {% if campo() != form.submit() and campo() != form.hidden_tag() %}
+                    
+                        {{campo.label}}
+                        {{campo()}}
+                        {% endif %}
+                        {% for e in campo.errors %}
+                            <span>[{{e}}]</span>
+                        {% endfor %}
+        
+                    </p>
+                    {% endfor %}
+            </div>
+            <div class="column">
+                <p>{{form.submit()}}</p>
+                
+                <a href="{{atras}}" class="button subtitle is-primary has-text-light" >atras</a>
+            </div>
+        </form>

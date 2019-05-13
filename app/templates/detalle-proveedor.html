@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .buttoncont{
+        margin-top: 1em;
+    }
+</style>
+
+<section class="section container">
+
+    <p><strong>Nombre: </strong> {{p.nombre}}</p>
+
+    <p><strong>Dirección:</strong> {{p.direccion}}</p>
+
+    <p><strong>CUIT:</strong> {{p.cuit}}</p>
+
+    <p><strong>Tel.:</strong> {{p.telefono}}</p>
+
+    <p><strong>Contacto:</strong> {{p.contacto}}</p>
+
+    <p><strong>E-mail:</strong> {{p.email}}</p>
+
+    <p><strong>Comentarios: </strong>{{p.comentario}}</p>
+
+    <p><strong>Saldo a la fecha:</strong> ${{p.saldo}}</p>
+{% if p.flete %}
+    <p><strong>FLETE:</strong> {{p.flete}}</p>
+{% endif %}
+
+<div class="buttoncont">
+<p class=""><a href="{{url_for('editar_proveedor', id=p.id)}}" class="has-text-white button subtitle is-primary">Editar</a>  <a href="{{url_for('borrar_proveedor', id=p.id)}}" class="has-text-white button subtitle is-danger">Borrar</a></p>
+</div>
+</section>
+
+<h1 class="title">Saldo A: ${{p.saldo_a}}<br>Saldo B: ${{p.saldo_b}}</h1>
+
+
+<div class="section">
+    <div class="tabs is-medium is-toggle is-centered">
+        <ul>
+            <li id="v" class="btn is-active"><a onclick="openTab('ventas')">Compras</a></li>
+            <li id="c" class="btn"><a onclick="openTab('cobros')">Pagos</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <table class="table is-hoverable" id='ventas'>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>P/unitario</th>
+                    <th>Cantidad</th>
+                    <th>Sub total</th>
+                    <th>Flete</th>
+                    <th>Total</th>
+                    <th>Factura</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in p.compras %}
+                {% if c.state %}
+                <tr>
+                    <td>{{c.fecha.strftime('%d/%m/%Y - %H:%M')}}</td>
+                    <td>
+                        {% if c.producto.nombre %}
+                        {{c.producto.nombre}}</td>
+                        {% else %}
+                            Servicio
+                        {% endif %}
+                    <td>$ {{c.precio_unitario}}</td>
+                    <td>{{c.cantidad}}</td>
+                    <td>$ {{c.precio_carga}}</td>
+                    <td>$ {{c.precio_flete}}</td>
+                    <td>$ {{c.monto_total}} </td>
+                    <td>
+                        {% if c.factura_proveedor %}
+                            A
+                        {% else %}
+                            B
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <table id="cobros" class="table is-hoverable" style="display:none;">
+            <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Forma de pago</th>
+                        <th>Tipo factura</th>
+                        <th>Monto</th>
+                    </tr>
+            </thead>
+            <tbody>
+                {% for pago in p.cobros %}
+                {% if pago.state %}
+                    <tr>
+                        <td>{{pago.fecha.strftime('%d/%m/%y - %H:%M')}}</td>
+                        {% if pago.forma_pago =='Cheque' %}<td><a href="{{url_for('detalle_cheque', id=pago.cheques[0].id)}}">Cheque</a></td>
+                        {% else %}
+                        <td>Efectivo</td>
+                        {% endif %}
+                        <td>{{pago.factura}}</td>
+                        <td>{{pago.monto}}</td>
+                    </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+{% endblock content %}

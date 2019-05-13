@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    dl {
+        margin-bottom:50px;
+    }
+     
+    dl dt {
+        background: mistyrose;
+        
+        float:left; 
+        font-weight:bold; 
+        margin-right:20px; 
+        padding:5px;  
+        width:200px; 
+    }
+     
+    dl dd {
+        margin:2px 0; 
+        padding:5px 0;
+    }
+</style>
+<section class="section columns">
+    <dl class="column is-half">
+        <dt><strong>Producto:</strong></dt>
+        <dd>{{p.nombre}}</dd>
+
+        <dt>Stock A</dt>
+        <dd>{{p.cantidad_a}}</dd>
+
+        <dt>Stock B</dt>
+        <dd>{{p.cantidad_b}}</dd>
+
+        <dt>Precio de venta</dt>
+        <dd>$ {{p.precio}}</dd>
+
+        <dt>Precio de compra</dt>
+        <dd>$ {{p.precio_compra}}</dd>
+
+        <dt>Promedio calculado entre</dt>
+        <dd>{{c_compras}}(compras)</dd>
+
+        <dt><strong>Última modificación</strong></dt>
+        <dd>{{p.modificacion.strftime('%d/%m/%y %H:%M')}}</dd>
+
+        <dt>Total Acumulado</dt>
+        <dl>$ {{(p.cantidad_a + p.cantidad_b) * p.precio_compra}}</dl>
+    </dl>
+    <p style="padding-top:12px;">
+    <a class="button is-danger" href="{{url_for('borrar_producto', id=p.id)}}">Eliminar Producto</a><br><br>
+    <a class="button is-dark" href="{{url_for('editar_producto', id=p.id)}}">Editar Producto</a>
+</p>
+</section>
+<section class="section">
+    <div class="tabs is-medium is-toggle is-centered">
+        <ul>
+            <li id="v" class="btn is-active"><a onclick="openTab('ventas')">Ventas</a></li>
+            <li id="c" class="btn"><a onclick="openTab('cobros')">Compras</a></li>
+        </ul>
+    </div>
+    <div class="container">
+        <table class="table is-hoverable" id="ventas">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>P. total venta</th>
+                    <th>Utilidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in p.ventas %}
+                {% if v.state %}
+                <tr>
+                    <td><a href="{{url_for('detalle_venta',id=v.id)}}">{{v.fecha.strftime("%d/%m/%y %H:%M ")}}</a></td>
+                    <td><a href="{{url_for('detalle_cliente',id=v.cliente_id)}}">{{v.cliente.nombre}}</a></td>
+                    <td>${{v.monto_total}}</td>
+                    <td>{{v.utilidad}}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="container">
+        <table class="table is-hoverable" id="cobros" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Proveedor</th>
+                    <th>P. total compra</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in p.compras %}
+                {% if c.state %}
+                <tr>
+                    <td>
+                        <a href="{{url_for('detalle_compra',id=c.id)}}">{{c.fecha.strftime("%d/%m/%y %H:%M ")}}</a>
+                    </td>
+                    <td>
+                        <a href="{{url_for('detalle_proveedor',id=c.proveedor_id)}}">{{c.proveedor.nombre}}</a>
+                    </td>
+                    <td>
+                        ${{c.monto_total}}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock content %}
+
+{#<section class="section columns">
+        <div class="column is-half ventas">
+            <h2 class="subtitle">Ventas</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>P. total venta</th>
+                        <th>Utilidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in p.ventas %}
+                    {% if v.state %}
+                    <tr>
+                        <td><a href="{{url_for('detalle_venta',id=v.id)}}">{{v.fecha.strftime("%d/%m/%y %H:%M ")}}</a></td>
+                        <td><a href="{{url_for('detalle_cliente',id=v.cliente_id)}}">{{v.cliente.nombre}}</a></td>
+                        <td>${{v.monto_total}}</td>
+                        <td>{{v.utilidad}}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column is-half compras">
+            <h2 class="subtitle">Compras</h2>
+            <div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>P. total compra</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in p.compras %}
+                    {% if c.state %}
+                    <tr>
+                        <td>
+                            <a href="{{url_for('detalle_compra',id=c.id)}}">{{c.fecha.strftime("%d/%m/%y %H:%M ")}}</a>
+                        </td>
+                        <td>
+                            <a href="{{url_for('detalle_proveedor',id=c.proveedor_id)}}">{{c.proveedor.nombre}}</a>
+                        </td>
+                        <td>
+                            ${{c.monto_total}}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+    </section>#}

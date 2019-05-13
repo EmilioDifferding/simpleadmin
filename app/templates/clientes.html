@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Direccion</th>
+                <th>Telefono</th>
+                <th>CUIT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cliente in clientes %}
+                <tr>
+                <th><a href="{{url_for('detalle_cliente',id=cliente.id)}}">{{cliente.nombre}}</th>
+                <td>{{cliente.direccion}}</td>
+                <td>{{cliente.telefono}}</td>
+                <td>{{cliente.cuit}}</td>
+                <td> <a href="{{url_for('editar_cliente', id=cliente.id)}}" class="button is-success">Editar</a></td>
+        <td> <a href="{{url_for('borrar_cliente', id=cliente.id)}}" class="button is-danger"> Borrar</a></td>
+            </tr>
+                {% endfor %}
+        </tbody>
+    </table>
+
+     <h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_cliente')}}">Cargar cliente nuevo</a></h5>
+{% endblock content %}

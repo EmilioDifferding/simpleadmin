@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="section is-primary"><a href="{{url_for('cargar_compra')}}" class="button is-primary"><strong>Cargar Compra</strong></a></div>
+    <table class="table container">
+        <thead>
+            <tr>
+                <th>Fecha - Hora</th>
+                <th>Proveedor</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Valor Unitario</th>
+                <th>Precio carga</th>
+                <th>Flete</th>
+                <th>Costo flete</th>
+                <th>Total</th>
+                <th>Factura</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in compras %}
+            <tr>
+                <td><a href="{{url_for('detalle_compra',id=c.id)}}">{{c.fecha.strftime('%d/%m/%y %H:%M')}}</td>
+                <td><a href="{{url_for('detalle_proveedor', id=c.proveedor.id)}}">{{c.proveedor.nombre}}</a></td>
+                <td>
+                    {% if c.producto.nombre %}
+                    <a href="{{url_for('detalle_producto',id=c.producto.id)}}">{{c.producto.nombre}}</a>
+                    {% else %}
+                        Servicio
+                    {% endif %}
+                </td>
+                <td>{{c.cantidad}}</td>
+                <td>${{c.precio_unitario}}</td>
+                <td>${{c.precio_carga}}</td>
+                <td>{{c.flete_proveedor}}</td>
+                <td>${{c.precio_flete}}</td>
+                <td>${{c.monto_total}}</td>
+                <td>
+                    {% if c.factura_proveedor %}
+                        A
+                    {% else %}
+                        B
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+</div>
+
+{% endblock content %}

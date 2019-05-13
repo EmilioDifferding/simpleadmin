@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="section">
+    <p><strong>Fecha de carga:</strong> {{c.fecha.strftime('%d/%m/%y')}}</p>
+    <p><strong>Cliente:</strong> {{c.cliente_id}} </p>
+    <p><strong>Fecha Emisión: </strong>{{c.fecha_emision.strftime('%d/%m/%y')}}</p>
+    <p><strong>Fecha de cobro:</strong> {{c.fecha_cobro.strftime('%d/%m/%y')}}</p>
+    <p><strong>Entidad:</strong> {{c.banco}}</p>
+    <p><strong>Numero:</strong> {{c.numero}}</p>
+    <p><strong>Monto:</strong> $ {{c.importe}}</p>
+    <p><strong>Comentarios:</strong> {{c.comentario}}</p>
+    
+    <p class="button subtitle is-primary"><a href="{{url_for('detalle_cliente', id=c.cliente_id)}}" class="has-text-white">Editar</a></p>
+</div>
+
+{% endblock content %}
+

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    dl {
+        margin-bottom:50px;
+    }
+     
+    dl dt {
+        background: mistyrose;
+        color:#fff;
+        float:left; 
+        font-weight:bold; 
+        margin-right:20px; 
+        padding:5px;  
+        width:200px; 
+    }
+     
+    dl dd {
+        margin:2px 0; 
+        padding:5px 0;
+    }
+</style>
+<section class="section">
+    <dl>
+        <dt><strong>Nro de transaccion:</strong></dt>
+        <dd>{{venta.id}}</dd>
+        <dt><strong> Fecha:</strong></dt>
+        <dd>{{venta.fecha.strftime('%d/%m/%y %H:%M')}}</dd>
+        <dt><strong>Cliente</strong></dt>
+        {% if venta.cliente_id %}
+        <dd><a href="{{url_for('detalle_cliente', id=venta.cliente_id)}}">{{venta.cliente.nombre}}</a></dd>
+            
+        {% endif %}
+        {#}{% for p in venta.producto %}{#}
+        <dt><strong> Producto:</strong></dt>
+        <dd>{{venta.producto.nombre}}</dd>
+        <dt><strong>cantidad</strong></dt>
+        <dd>{{venta.cantidad}}</dd>
+        <dt> <strong>Precio de compra:</strong></dt>
+        <dd>$ {{venta.pc_u}}</dd>
+        <dt><strong>Subtotal</strong></dt>
+        <dd>$ {{venta.precio_carga}}</dd>
+        {#}{% endfor %}{#}
+        <dt><strong>Precio Unitario</strong></dt>
+        <dd>$ {{venta.pv_u}}</dd>
+        <dt><strong>Costo flete</strong></dt>
+        <dd>$ {{venta.costo_flete}}</dd>
+        <dt><strong>Monto total de venta</strong></dt>
+        <dd>$ {{ venta.monto_total}}</dd>
+        <dt><strong>Utilidad</strong></dt>
+        <dd>$ {{venta.utilidad}}</dd>
+    </dl>
+    <a class="button is-danger" href="{{url_for('borrar_venta', id=venta.id)}}">Eliminar esta venta</a>
+</section>
+{% endblock content %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<table class="table">
+    <thead>
+        <tr>
+            {% for item in header_list %}
+            <th>{{item}}</th>
+            {% endfor %}
+            <th> </th>
+            <th> </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in productos %}
+        <tr>
+            <td><a href="{{url_for('detalle_producto', id=p.id)}}">{{p.nombre}}</a></td>
+            <td>{{p.cantidad_a + p.cantidad_b}}</td>
+            <td>${{p.precio_compra}}</td>
+            <td>${{p.precio}}</td>
+            <td>{{p.modificacion.strftime('%d/%m/%Y - %H:%M')}}</td>
+            <td><a class='button is-primary has-text-white' href="{{url_for('editar_producto', id=p.id)}}">Editar</a></td>
+            <td><a class='button is-danger has-text-white' href="{{url_for('borrar_producto', id=p.id)}}">Borrar</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_producto')}}">Cargar producto nuevo</a></h5>
+{% endblock content %}
