@@ -569,110 +569,72 @@ def saldo_proveedores():
 @app.route('/cobrar', methods=['GET','POST'])
 def cobrar():
     form = CobranzaForm()
-    form.cliente.choices = [(c.id, c.nombre)for c in Cliente.query.order_by('nombre').all()]
+    form.cliente.choices = [(c.id, c.nombre)for c in Cliente.query.filter_by(state=True).order_by('nombre').all()]
+    
     if form.validate_on_submit():
         cliente = Cliente.query.filter_by(id=form.cliente.data).first()
         if form.factura.data < 1:
             factura = True
         else:
             factura = False
+        cobro = Cobro(
+            proveedor = None,
+            cliente = cliente,
+            nombre = cliente.nombre,
+            factura = factura,
+            monto = round(form.monto.data,2),
+            fecha = form.fecha.data,
+            comentario = form.comentario.data,
+            hay_cheque = form.hay_cheque.data,
+            entrada = True,
+            state = True,
+        )
+        db.session.add(cobro)
+        cobro.restar_saldo()
+        db.session.commit()
 
-        fp = form.forma_pago.data
-        if fp < 0:
-            forma_pago = 'Cheque'
-            cobro = Cobro(
-                proveedor = None,
-                cliente = cliente,
-                nombre = cliente.nombre,
-                factura= factura,
-                forma_pago = forma_pago,
-                monto = round(form.monto.data,2),
-                fecha = form.fecha.data,
-                comentario = form.comentario.data,
-                entrada=True,
-                state = True
-                )
-            cobro.restar_saldo()
-            db.session.add(cobro)
-            db.session.commit()
-            flash('Ahora cargue los datos del cheque')
-            print('COBRO NUIMERO {}'.format(cobro.id))
-            return redirect(url_for('cargar_cheque',id=cobro.id))
+        if form.hay_cheque.data:
+            flash('Ahora cargue los datos del cheque.')
+            return redirect(url_for('cargar_cheque', id=cobro.id))
         else:
-            forma_pago = 'Efectivo'
-            cobro = Cobro(
-                proveedor = None,
-                cliente = cliente,
-                nombre = cliente.nombre,
-                factura = factura,
-                forma_pago = forma_pago,
-                monto = round(form.monto.data,2),
-                fecha = form.fecha.data,
-                comentario = form.comentario.data,
-                state = True,
-                entrada=True
-                )
-            cobro.restar_saldo()
-            db.session.add(cobro)
-            db.session.commit()
-            flash('Cobro en efectivo realizado con exito')
-            return redirect(url_for('listar_cobros'))
-    
-    return render_template('formulario-de-carga.html', title='Cargar un pago de cliente', form=form)
+            flash('Cobro en efectivo cargado con exito!.')
+            return redirect(url_for('listar-Cobros'))
+    return render_template('formulario-de-carga.html', title='Cargar cobro de un cliente', form=form)
 
 @app.route('/pagar', methods=['GET','POST'])
 def pagar():
     form = CobranzaForm()
-    form.cliente.choices = [(c.id, c.nombre)for c in Proveedor.query.order_by('nombre').all()]
+    form.cliente.choices = [(c.id, c.nombre)for c in Proveedor.query.filter_by(state=True).order_by('nombre').all()]
 
     if form.validate_on_submit():
         proveedor = Proveedor.query.filter_by(id=form.cliente.data).first()
+
         if form.factura.data < 1:
             factura = True
         else:
             factura = False
-
-        fp = form.forma_pago.data
-        if fp < 0:
-            forma_pago = 'Cheque'
-            cobro = Cobro(
-                proveedor = proveedor,
-                cliente = None,
-                nombre = proveedor.nombre,
-                factura= factura,
-                forma_pago = forma_pago,
-                monto = round(form.monto.data,2),
-                fecha = form.fecha.data,
-                comentario = form.comentario.data,
-                entrada=False,
-                state = True
-                )
-            db.session.add(cobro)
-            cobro.restar_saldo()
-            db.session.commit()
+        cobro = Cobro(
+            proveedor = proveedor,
+            cliente = None,
+            nombre = proveedor.nombre,
+            factura= factura,
+            monto = round(form.monto.data,2),
+            fecha = form.fecha.data,
+            comentario = form.comentario.data,
+            hay_cheque = form.hay_cheque.data,
+            entrada=False,
+            state = True
+        )
+        db.session.add(cobro)
+        cobro.restar_saldo()
+        db.session.commit()
+        
+        if form.hay_cheque.data:
             flash('Ahora cargue los datos del cheque')
-            print('COBRO NUIMERO {}'.format(cobro.id))
-            return redirect(url_for('cargar_cheque',id=cobro.id))
+            return redirect(url_for('cargar_cheque', id=cobro.id))
         else:
-            forma_pago = 'Efectivo'
-            restar_saldo(Proveedor, proveedor.id, form.monto.data)
-            cobro = Cobro(
-                proveedor = proveedor,
-                cliente = None,
-                nombre = proveedor.nombre,
-                factura = factura,
-                forma_pago = forma_pago,
-                monto = round(form.monto.data,2),
-                fecha = form.fecha.data,
-                comentario = form.comentario.data,
-                entrada=False,
-                state = True
-                )
-            db.session.add(cobro)
-            db.session.commit()
-            flash('Pago en efectivo realizado con exito')
-            return redirect(url_for('listar_cobros'))
-    
+            flash('Pago cargado con exito!.')
+            return redirect(url_for('listar_pagos'))
     return render_template('formulario-de-carga.html', title='Cargar un pago de cliente', form=form)
 
 @app.route('/cargar-cheque/<id>', methods=['GET','POST'])
@@ -731,7 +693,8 @@ def listar_cheques():
 @app.route('/detalle-cheque/<id>')
 def detalle_cheque(id):
     c = Cheque.query.filter_by(id=id).first_or_404()
-    return render_template('detalle_cheque.html',c=c, title='Detalle de cheque Nº: {}'.format(c.numero))
+    emisor = c.cobro.nombre
+    return render_template('detalle_cheque.html',c=c, title='Detalle de cheque Nº: {}'.format(c.numero), emisor=emisor)
 
 @app.route('/borrar-cobro/<id>')
 def borrar_cobro(id):

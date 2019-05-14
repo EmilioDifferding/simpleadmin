@@ -98,13 +98,18 @@
                 {% for pago in p.cobros %}
                 {% if pago.state %}
                     <tr>
-                        <td>{{pago.fecha.strftime('%d/%m/%y - %H:%M')}}</td>
-                        {% if pago.forma_pago =='Cheque' %}<td><a href="{{url_for('detalle_cheque', id=pago.cheques[0].id)}}">Cheque</a></td>
+                        <td>
+                            {{pago.fecha.strftime('%d/%m/%y - %H:%M')}}
+                        </td>
+                        <td>
+                        {% if pago.hay_cheque %}
+                            <a href="{{url_for('detalle_cheque', id=pago.cheques[0].id)}}">Cheque</a>
                         {% else %}
-                        <td>Efectivo</td>
+                            Efectivo
                         {% endif %}
+                    </td>
                         <td>{{pago.factura}}</td>
-                        <td>{{pago.monto}}</td>
+                        <td>$ {{pago.monto}}</td>
                     </tr>
                 {% endif %}
                 {% endfor %}

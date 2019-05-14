@@ -188,7 +188,7 @@ class CobranzaForm(FlaskForm):
     cliente = SelectField('Empresa:', coerce=int)
     monto = FloatField('Monto')
     comentario = TextAreaField('Comentario')
-    forma_pago = SelectField('Forma de pago', choices=[(-1, 'Cheque'), (0, 'Efectivo')], coerce=int)
+    hay_cheque = BooleanField('Contiene Cheque')
     factura = SelectField('Factura', choices=[(0, 'A'),(1, 'B')], coerce=int)
     submit = SubmitField('Aceptar')
 

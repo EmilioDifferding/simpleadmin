@@ -166,6 +166,8 @@ class Cobro(db.Model):
     cheques = db.relationship('Cheque', backref='cobro', lazy='dynamic')
     state = db.Column(db.Boolean, default=True) # para controlar si impacta o no cuando se elimina pasa a state=False
     entrada = db.Column(db.Boolean)#si es un cobro->TRUE o un pago ->FALSE
+    # hay_cheque = db.Column(db.Boolean)
+    hay_cheque = db.Column(db.Boolean)
 
     def restar_saldo(self):
         if self.entrada:
@@ -174,7 +176,7 @@ class Cobro(db.Model):
             else: self.cliente.saldo_b -= self.monto
         else:
             if self.factura:
-                self.proveedor.saldo_b -= self.monto
+                self.proveedor.saldo_a -= self.monto
             else:
                 self.proveedor.saldo_b -= self.monto
 
