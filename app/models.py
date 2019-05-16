@@ -32,6 +32,22 @@ class Cliente(db.Model):
     saldo_a = db.Column(db.Float, default= 0.00)
     saldo_b = db.Column(db.Float, default=0.00)
     cobros = db.relationship('Cobro', backref='cliente', lazy='dynamic')
+    state = db.Column(db.Boolean, default=True)
+
+    def borrar(self):
+        if (self.saldo_a > 0 | saldo_a < 0 | saldo_b < 0 | saldo_b > 0):
+            flash('No puede borrarse este cliente. Posee saldos pendientes')
+            return redirect(url_for('detalle_cliente', id=self.id))
+        else:
+            self.state = False
+            db.session.commit()
+            return redirect(url_for('Cliente eliminado con exito'))
+    
+    def restaurar(self):
+        self.state = True
+        flash ('Cliente restaurado, puede volver a operar con él')
+        return redirect(url_for('detalle_cliente', id=self.id))
+
     
     def __repr__(self):
         return '<Cliente {}>'.format(self.nombre)
@@ -59,33 +75,9 @@ class Venta(db.Model):
     #METODOS
     def get_utility(self):
         self.utilidad =round( (self.monto_total-((self.pc_u*self.cantidad)+self.costo_flete)),2)
-    
-    def actualizar_stock(self):
-        """Determina de donde restar stock segun tipo factura
-        si un stock queda negativo resta esa diferencia al siguiente
-        stock y restable a 0 el negativo
-        """
-        p = self.producto
-        print('Determinando factura')
-        if (self.factura_cliente):
-            print('Factura A')
-            p.cantidad_a -= self.cantidad
-            print('Resultado parcial stock A {}'.format(p.cantidad_a))
-            if p.cantidad_a < 0:
-                print('Stock A < 0...')
-                p.cantidad_b += p.cantidad_a
-                p.cantidad_a = 0
-        else:
-            print('Factura B')
-            p.cantidad_b -= self.cantidad
-            if p.cantidad_b < 0:
-                p.cantidad_a += p.cantidad_b
-                p.cantidad_b = 0
 
-    def actualizar_saldo(self):
+    def actualizar_saldo_cliente(self):
         """al ejecutar la venta, se le impyta el saldo al cliente y si hay un flete elegido, precio_flete se inputa también como saldo al proveedor del flete"""
-
-        print('actualizando saldo de {}'.format(self.cliente.nombre))
 
         if self.factura_cliente:
             print('Actualizando saldo A en cliente')
@@ -94,6 +86,7 @@ class Venta(db.Model):
             print('Actualizando saldo B en cliente')
             self.cliente.saldo_b += self.monto_total #self.precio_carga + self.costo_flete
 
+    def actualizar_saldo_proveedor(self):
         if self.flete_proveedor != '':
             pf = Proveedor.query.filter_by(nombre=self.flete_proveedor).first()
 
@@ -111,39 +104,34 @@ class Venta(db.Model):
             db.session.add(c)
             c.actualizar_saldo(self.costo_flete)
 
-
-            # print('Actualizando saldo A de proveedor')
-            # if self.factura_flete:
-            #     pf.saldo_a += self.costo_flete
-            # else:
-            #     pf.saldo_b += self.costo_flete
-
-        # if self.pagado:
-        # if type(self.cliente.saldo) != float:
-        #     print ('tipo Dato anterior {}'.format(type(self.cliente.saldo)))
-        #     self.cliente.saldo = 0
-        #     print('tipo de dato actual: {}'.format(type(self.cliente.saldo)))
-        # self.cliente.saldo += self.precio_carga + self.costo_flete
-        # if self.flete_proveedor != '':
-        #     pf = Proveedor.query.filter_by(nombre=self.flete_proveedor).first()
-        #     if type(pf.saldo) != float:
-        #         pf.saldo = 0
-        #     pf.saldo += self.costo_flete
-
-
-
     def borrar(self):
-        """Desactiva la transaccion y restaura los saldos y stock"""
-        if self.state:
-            if self.cliente is not None:
-                self.cliente.saldo -= self.precio_carga
-                if self.costo_flete > 0:
-                    if self.flete_proveedor != '':
-                        pf = Proveedor.query.filter_by(nombre=self.flete_proveedor).first()
-                        pf.saldo -= self.costo_flete
-                        self.cliente.saldo -= self.costo_flete
-                self.producto.cantidad += self.cantidad
-            self.state = False
+        """ Restaura el saldo del cliente, borra la compra al proveedor del flete que consecuentemente restaura su saldo. Restaura el stock de producto y cambia [venta.state => False]
+        """
+        #Restaurar stock y saldo cliente
+        if self.factura_cliente:
+            self.cliente.saldo_a += self.monto_total
+            self.producto.actualizar_stock(cantidad=(-self.cantidad), factura=self.factura_cliente)
+        else:
+            self.cliente.saldo_b += self.monto_total
+            self.producto.actualizar_stock(cantidad=(-self.cantidad), facrua=self.factura_cliente)
+        pf = Proveedor.query.filter_bu(nombre = self.flete_proveedor).first()
+        #TODO: Terminar restauracion del saldo de proveedor y borrado de esa compra de servicio
+
+
+
+
+    # def borrar(self):
+    #     """Desactiva la transaccion y restaura los saldos y stock"""
+    #     if self.state:
+    #         if self.cliente is not None:
+    #             self.cliente.saldo -= self.precio_carga
+    #             if self.costo_flete > 0:
+    #                 if self.flete_proveedor != '':
+    #                     pf = Proveedor.query.filter_by(nombre=self.flete_proveedor).first()
+    #                     pf.saldo -= self.costo_flete
+    #                     self.cliente.saldo -= self.costo_flete
+    #             self.producto.cantidad += self.cantidad
+    #         self.state = False
 
     def __repr__(self):
         return '<Venta nro: {id} >'.format(id=self.id)
@@ -356,6 +344,22 @@ class Producto(db.Model):
                 parcial += self.compras[i].precio_unitario
             self.precio_compra = round(parcial/(len(self.compras) - self.offset),2)
         db.session.commit()
+    
+    def actualizar_stock(self, cantidad, factura):
+        '''<cantidad> es la cantidad que sera agregada o restada del stock, si se quiere restar la cantidad el parametro debe ser < 0 lo contrario para sumar la cantidad.
+        <factura -> Boolean> determina de dónde restar el stock
+        '''
+        if factura:
+            self.cantidad_a += cantidad
+            if self.cantidad_a < 0:
+                self.catidad_b += self.cantidad_a #en este momento a es < 0
+                self.cantidad_a = 0 #restaura a 0 porque no hay cantidades negativas
+        else:
+            self.cantidad_b += cantidad
+            if self.cantidad_b < 0:
+                self.catidad_a += self.cantidad_vb#en este momento b es < 0
+                self.cantidad_b = 0 #restaura a 0 porque no hay cantidades negativas
+
 
     def get_raw_prom(self):
         raw_prom = 0 
