@@ -32,8 +32,8 @@
                 <td>${{v.pv_u}}</td>
                 <td>{{v.cantidad}}</td>
                 <td>${{v.precio_carga}}</td>
-                {% if v.flete_proveedor %}
-                <td>{{v.flete_proveedor}}</td>
+                {% if v.envio[0] %}
+                <td>{{v.envio[0].nombre}}</td>
                 {% else %}
                 <td>Sin flete</td>
                 {% endif %}

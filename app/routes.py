@@ -240,63 +240,64 @@ def cargar_venta():
     form = CargarVentaForm()
     form.clientes.choices=[
         (c.id, c.nombre)
-        for c in Cliente.query.order_by('nombre').all()]
+        for c in Cliente.query.filter_by(state=True).order_by('nombre').all()]
     form.producto.choices=[
         (p.id, p.nombre+' '+
-        str(p.cantidad_a + p.cantidad_b))for p in Producto.query.order_by('nombre').all()]
+        str(p.cantidad_a + p.cantidad_b))for p in Producto.query.filter_by(state=True).order_by('nombre').all()]
     form.flete.choices = [(0,"---")]+[
-        (f.id, f.nombre)for f in Proveedor.query.filter_by(flete=True).all()]
-
+        (f.id, f.nombre)for f in Proveedor.query.filter_by(flete=True).filter_by(state=True).order_by('nombre').all()]
+    
     if form.validate_on_submit():
-        prod = Producto.query.filter_by(id=form.producto.data).first()
-        cli = Cliente.query.filter_by(id=form.clientes.data).first()
-        cant = form.cantidad.data
-        if ((prod.cantidad_a + prod.cantidad_b) < form.cantidad.data):
-            flash('No hay suficiente stock')
+        producto = Producto.query.filter_by(id = form.producto.data).first()
+        if (producto.cantidad_a + producto.cantidad_b) < form.cantidad.data:
+            flash('No hay suficiente stock para realizar esta venta')
             return redirect(url_for('cargar_venta'))
         else:
-            # TODO: // agregar codigo para hacer la venta efectiva
+            cliente = Cliente.query.filter_by(id = form.clientes.data).first()
             if form.flete.data != 0:
-                flete = Proveedor.query.filter_by(id=form.flete.data).first()
-                flete = flete.nombre
-            else: flete = ''
-            venta = Venta(
-                fecha = form.fecha.data,
-                cliente = cli,
-                producto = prod,
-                cantidad = cant,
-                pv_u = form.precio_unitario.data,
-                pc_u = prod.precio_compra,
-                precio_carga = form.sub_total.data,
-                flete_proveedor = flete,
-                costo_flete = form.costo_flete.data,
-                monto_total =form.monto_total.data,
-                comentario = form.comentario.data,
-                pagado = form.pagado.data,
-                factura_cliente = form.factura_cliente.data,
-                factura_flete = form.factura_flete.data
+                flete = Proveedor.query.filter_by(id=form.flete.data).filter_by(state=True).first()
+            else: flete = None
+        
+        venta = Venta(
+            fecha = form.fecha.data,
+            cliente = cliente,
+            producto = producto,
+            cantidad = form.cantidad.data,
+            pv_u = form.precio_unitario.data,
+            pc_u = producto.precio_compra,
+            precio_carga = form.sub_total.data,
+            costo_flete = form.costo_flete.data,
+            monto_total =form.monto_total.data,
+            comentario = form.comentario.data,
+            pagado = form.pagado.data,
+            factura_cliente = form.factura_cliente.data,
+            factura_flete = form.factura_flete.data
             )
-            db.session.add(venta)
-            venta.get_utility()
-            venta.producto.actualizar_stock(cantidad=cant, factura=factura_cliente)
-            venta.actualizar_saldo_cliente()
-            venta.actualizar_saldo_proveedor()
-            db.session.commit()
-            flash('Venta realizada con exito!')
-            return redirect(url_for('listar_ventas'))
-    
-    return render_template('formulario-de-carga.html',form=form, title='Cargar venta nueva')
+        db.session.add(venta)
+        venta.get_utility()
+        venta.producto.actualizar_stock(
+            cantidad = form.cantidad.data,
+            factura = form.factura_cliente.data,
+            entrada = False
+            )
+        venta.actualizar_saldo_cliente(suma=True)
+        if flete is not None:
+            venta.envio.append(flete)
+            venta.actualizar_saldo_proveedor(suma=True)
+        db.session.commit()
+        flash('Venta cargada con exito!')
+        return redirect(url_for('listar_ventas'))
+    return render_template(
+        'formulario-de-carga.html',
+        form = form,
+        title = 'Cargar nueva venta'
+        )
 
 ####LISTA LAS VENTAS EN ORDEN CRONOLOGICO###
 @app.route('/ventas/')
 def listar_ventas():
     ventas = Venta.query.filter_by(state=True).order_by(Venta.fecha.desc()).all()
-    return render_template('ventas.html', ventas=ventas, title="registro de ventas(TODAS)")
-# def listar_ventas():
-#     ventas = Venta.query.order_by(Venta.fecha.desc()).all()
-#     print(ventas)
-#     return render_template('ventas.html',ventas=ventas,title='Registro de ventas', )
-
+    return render_template('ventas.html', ventas=ventas, title="registro de ventas (TODAS)")
 
 @app.route('/ventas/<string:factura>')
 def listar_ventas_a(factura):
@@ -305,10 +306,9 @@ def listar_ventas_a(factura):
         return render_template('ventas.html', ventas=ventas, title='Registros de ventas A')
     elif factura=='b':
         ventas = Venta.query.filter_by(factura_cliente=False).order_by(Venta.fecha.desc())
-        return render_template('ventas.html', ventas=ventas, title='Registros de ventas A')
+        return render_template('ventas.html', ventas=ventas, title='Registros de ventas B')
     else: return listar_ventas()
 
-    
 ###DETALLE DE VENTA###
 @app.route('/venta/<id>')
 def detalle_venta(id):
@@ -337,58 +337,47 @@ def borrar_venta(id):
 @app.route('/cargar-compra', methods=['GET','POST'])
 def cargar_compra():
     form = CargarCompraForm()
-    form.proveedor.choices=[(p.id, p.nombre)for p in Proveedor.query.order_by('nombre').all()]
-    form.producto.choices = [(p.id, p.nombre)for p in Producto.query.order_by('nombre').all()]
-    form.flete.choices=[(0,"---")]+[(f.id, f.nombre) for f in Proveedor.query.filter_by(flete=True).all()]
+    form.proveedor.choices=[(p.id, p.nombre)for p in Proveedor.query.filter_by(state=True).order_by('nombre').all()]
+    form.producto.choices = [(p.id, p.nombre)for p in Producto.query.filter_by(state=True).order_by('nombre').all()]
+    form.flete.choices=[(0,"---")]+[(f.id, f.nombre) for f in Proveedor.query.filter_by(state=True).filter_by(flete=True).order_by('nombre').all()]
 
     if form.validate_on_submit():
         producto = Producto.query.filter_by(id=form.producto.data).first()
         proveedor = Proveedor.query.filter_by(id=form.proveedor.data).first()
-        cant = form.cantidad.data
-        precio_carga = form.precio_carga.data
-        flete = round(form.precio_flete.data,2)
-        flete_p = form.flete.data
-        monto_total = form.monto_total.data
+        precio_flete = round(form.precio_flete.data,2)
+        precio_carga = round(form.precio_carga.data,2)
+        monto_total = round(form.monto_total.data,2)
         comentario = form.comentario.data
         pagado = form.pagado.data
-        fecha = form.fecha.data
         compra = Compra(
-            proveedor = proveedor,
-            producto = producto,
-            fecha = fecha,
-            cantidad = cant,
-            precio_flete = flete,
-            precio_carga = round(precio_carga,2),
+            proveedor = Proveedor.query.filter_by(id=form.proveedor.data).first(),
+            producto = Producto.query.filter_by(id=form.producto.data).first(),
+            fecha = form.fecha.data,
+            cantidad = form.cantidad.data,
+            precio_flete = precio_flete,
+            precio_carga = precio_carga,
             pagado = pagado,
-            monto_total = round(monto_total,2),
+            monto_total = monto_total,
             factura_proveedor = form.factura_proveedor.data,
             factura_flete = form.factura_flete.data,
         )
-        if flete_p != 0:
-            flete_proveedor = Proveedor.query.filter_by(id=flete_p).first()
-            compra.flete_proveedor = flete_proveedor.nombre
-            compra_flete = Compra(
-                proveedor = flete_proveedor,
-                monto_total = flete,
-                precio_flete = flete,
-                precio_carga = flete,
-                precio_unitario = flete,
-                factura_proveedor = form.factura_flete.data,
-                flete_proveedor = flete_proveedor.nombre,
-                cantidad = 1,
-                es_flete= True,
-            )
-            db.session.add(compra_flete)
-            compra_flete.actualizar_saldo(flete)
-        else: compra.flete_proveedor =''
-
-        db.session.add(compra)
         compra.get_unit_price()
-        compra.actualizar_saldo(round(precio_carga,2))
-        compra.actualizar_stock()
-        compra.producto.calcular_pecio_unitario()
-        
+        compra.actualizar_saldo_flete(suma=True)
+
+        if form.flete.data != 0:
+            flete = Proveedor.query.filter_by(id=form.flete.data).first()
+        else:
+            flete = None
+
+        compra.actualizar_saldo_proveedor(suma=True)
+        compra.producto.actualizar_stock(
+            cantidad = form.cantidad.data,
+            factura = form.factura_proveedor.data,
+            entrada = True
+        )
+        db.session.add(compra)
         db.session.commit()
+        compra.producto.calcular_precio_unitario()
         flash('Compra cargada con Exito!')
         return redirect(url_for('listar_compras'))
         
