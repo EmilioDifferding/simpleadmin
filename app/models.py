@@ -179,6 +179,23 @@ class Cobro(db.Model):
                 self.proveedor.saldo_a -= self.monto
             else:
                 self.proveedor.saldo_b -= self.monto
+    
+    def borrar(self):
+        self.state = False
+        for c in self.cheques:
+            c.state = False
+        if self.entrada:
+            self.cliente.actualizar_saldo(
+                monto = self.monto,
+                factura = self.factura,
+                suma = True
+            )
+        else:
+            self.proveedor.actualizar_saldo(
+                monto = self.monto,
+                factura = self.factura,
+                suma = True
+            )
 
 class Cheque(db.Model):
     id = db.Column(db.Integer, unique=True, index=True, primary_key=True)

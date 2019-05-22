@@ -32,7 +32,12 @@
                 <td>{{c.cantidad}}</td>
                 <td>${{c.precio_unitario}}</td>
                 <td>${{c.precio_carga}}</td>
-                <td>{{c.flete_proveedor}}</td>
+                <td>
+                    {% if c.envio[0] %}
+                        {{c.envio[0].nombre}}
+                    {% else %}
+                        sin envio
+                    {% endif %}</td>
                 <td>${{c.precio_flete}}</td>
                 <td>${{c.monto_total}}</td>
                 <td>

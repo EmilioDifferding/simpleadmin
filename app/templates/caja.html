@@ -20,6 +20,7 @@
             <a href="{{url_for('saldo_proveedores')}}" class="button is-warning has-text-centered">
             <p class="has-text-white"> SALDOS A PROVEEDORES</p>
             </a>
+            <a class="has-text-white button is-info" href="{{url_for('listar_cheques')}}">CHEQUES</a>
         </div>
     </div>
     <div class="columns-none"></div>
@@ -70,6 +71,8 @@
     <div class="section columns-none has-text-centered">
         <p class="title"><strong>Balance</strong></p>
         <p>{{balance}}</p>
+        <p class="title"><strong>caja</strong></p>
+        <p>{{caja}}</p>
     </div>
 </section>
 {% endblock content %}

@@ -3,7 +3,7 @@ from app import app, db
 from app.models import Cliente,Producto,Proveedor,Venta,Compra, Cobro, Cheque
 
 #Formularios
-from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm
+from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm,ChequedeTercero
 
 @app.route('/')
 @app.route('/index')
@@ -375,6 +375,8 @@ def cargar_compra():
             factura = form.factura_proveedor.data,
             entrada = True
         )
+        compra.envio.append(flete)
+        compra.actualizar_saldo_flete(suma=True)
         db.session.add(compra)
         db.session.commit()
         compra.producto.calcular_precio_unitario()
@@ -496,10 +498,16 @@ def caja():
     
     totin = (saldoClientes+cobros+totalProdAcum)
     totout = saldoProveedores+pagos
+    #TODO: FORMULA BALANCE
+    #saldo proveedores, cheques emitidos. caja.
+    # +Stock - (salida)Saldoproveedores +SaldoClientes +Caja Efectivo y cheque -Cheques emitidos. 
+    #Implementar chequera 
+    
     balance = round(totin-totout,2)
     return render_template(
         'caja.html',
         title='Caja',
+        caja = caja,
         pagos=pagos,
         cobros=cobros,
         saldoP=saldoProveedores,
@@ -629,6 +637,7 @@ def pagar():
 
 @app.route('/cargar-cheque/<id>', methods=['GET','POST'])
 def cargar_cheque(id):
+    control = True
     form = CargarChequeForm()
     cobro = Cobro.query.filter_by(id=id).first_or_404()
     if form.validate_on_submit():
@@ -645,7 +654,9 @@ def cargar_cheque(id):
             importe = form.importe.data,
             comentario = form.comentario.data,
             cobro=cobro,
-            es_de_tercero = es_de_tercero
+            es_de_tercero = es_de_tercero,
+            es_entrada = cobro.entrada,
+            factura = cobro.factura
             )
         db.session.add(cheque)
         db.session.commit()
@@ -653,8 +664,13 @@ def cargar_cheque(id):
         return redirect(url_for('caja'))
     elif request.method =='GET':
         form.importe.data = cobro.monto
-    return render_template('formulario-de-carga.html', title='Cargar Cheque', form=form)
+    return render_template('formulario-de-carga.html', title='Cargar Cheque', form=form, control=control, id=cobro.id)
 
+@app.route('/cheque-tercero/<id>',methods=['GET','POST'])
+def cheque_tercero(id):
+    form = ChequedeTercero()
+    form.cheques.choices = [(c.id, c.importe)for c in Cheque.query.filter_by(state=True).filter_by(es_de_tercero=True).order_by('importe').all()]
+    return render_template('formulario-de-carga.html',form=form)
 
 @app.route('/registro-de-cobros')
 def listar_cobros():
@@ -668,10 +684,10 @@ def listar_pagos():
 
 @app.route('/registro-de-cheques')
 def listar_cheques():
-    cheques = Cheque.query.filter_by(state=True)
+    cheques = Cheque.query.filter_by(state=True).all()
 
-    cheques_in = filter(lambda cheque: cheque.es_entrada & state, cheques)
-    cheques_out = filter(lambda cheque: not(cheque.es_entrada) & state, cheques)
+    cheques_in = filter(lambda cheque: cheque.es_entrada, cheques)
+    cheques_out = filter(lambda cheque: not(cheque.es_entrada), cheques)
 
     return render_template(
         'lista-cheques.html',
@@ -679,6 +695,13 @@ def listar_cheques():
         cheques_in=cheques_in,
         cheques_out=cheques_out,
         title = 'lista de cheques')
+
+@app.route('/acreditar-cheque/<id>')
+def acreditar_cheque(id):
+    cheque = Cheque.query.filter_by(id=id).first()
+    cheque.acreditado = True
+    db.session.commit()
+    return redirect(url_for('listar_cheques'))
 
 @app.route('/detalle-cheque/<id>')
 def detalle_cheque(id):

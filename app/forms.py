@@ -202,3 +202,6 @@ class CargarChequeForm(FlaskForm):
     comentario = TextAreaField('Comentario')
     submit = SubmitField('Aceptar')
 
+class ChequedeTercero(FlaskForm):
+    cheques = SelectField('seleccione el cheque', coerce=int)
+    submit = SubmitField('submit')

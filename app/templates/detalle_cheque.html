@@ -6,8 +6,9 @@
     {% if emisor %}
     <p><strong>Entregó:</strong> 
         {% if c.cobro.cliente %} 
-        <a href="{{url_for('detalle_cliente',id=c.cobro.cliente.id)}}"> {{c.cobro.cliente.nombre}}</a>
+        <a href="{{url_for('detalle_cliente',id=c.cobro.cliente.id)}}"> {{c.cobro.cliente.nombre}}</a>  para propietario
         {%else%}
+        Propietario para: 
         <a href="{{url_for('detalle_proveedor', id= c.cobro.proveedor.id)}}">{{c.cobro.proveedor.nombre}}</a>
         {%endif%}
         

@@ -25,6 +25,9 @@
         </div>
         <div class="column">
             <p>{{form.submit()}}</p>
+            {%if control%}
+                <a href="{{url_for('cheque_tercero', id=id)}}"class="button subtitle is-primary has-text-light">cargar cheque de tercero</a>
+            {%endif%}
             
             <a href="{{atras}}" class="button subtitle is-primary has-text-light" >atras</a>
         </div>

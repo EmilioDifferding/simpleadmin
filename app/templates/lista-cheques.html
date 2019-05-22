@@ -16,11 +16,12 @@
             {% for c in cheques %}
                 <tr>
                     <td>{{c.id}}</td>
-                    <td>{{c.numero}}</td>
+                    <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
                     <td>{{c.state}}</td>
                     <td>{{c.importe}}</td>
                     <td>{{c.es_de_tercero}}</td>
                     <td>{{c.es_entrada}}</td>
+                    <td><p class="button subtitle is-primary"><a href="{{url_for('acreditar_cheque', id=c.id)}}" class="has-text-white">acreditado</a></p></td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -41,7 +42,7 @@
                 {% for c in cheques_out %}
                     <tr>
                         <td>{{c.id}}</td>
-                        <td>{{c.numero}}</td>
+                        <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
                         <td>{{c.state}}</td>
                         <td>{{c.importe}}</td>
                         <td>{{c.es_de_tercero}}</td>
@@ -66,7 +67,7 @@
                     {% for c in cheques_in %}
                         <tr>
                             <td>{{c.id}}</td>
-                            <td>{{c.numero}}</td>
+                            <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
                             <td>{{c.state}}</td>
                             <td>{{c.importe}}</td>
                             <td>{{c.es_de_tercero}}</td>
