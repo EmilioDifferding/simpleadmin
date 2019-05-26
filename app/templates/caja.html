@@ -32,15 +32,15 @@
             <h2 class="subtitle card-header"><strong>Saldos Clientes y Proveedores</strong></h2>
             <div class="card-content">
                 <h3 class="has-text-centered"><strong>Proveedores</strong></h3>
-                <p><strong>Facturas A:</strong> ${{spa}}</p>
-                <p><strong>Facturas B:</strong> ${{spb}}</p>
-                <p><strong> Total Saldo a proveedores:</strong> ${{saldoP}}</p>
+                <p><strong>Facturas A:</strong> ${{saldoProveedores[0]}}</p>
+                <p><strong>Facturas B:</strong> ${{saldoProveedores[1]}}</p>
+                <p><strong> Total Saldo a proveedores:</strong> ${{saldoProveedores[2]}}</p>
             </div>
             <div class="card-content">
                 <h3 class="has-text-centered"><strong>Clientes</strong></h3>
-                <p><strong>Facturas A:</strong> ${{sca}}</p>
-                <p><strong>Facturas B:</strong> ${{scb}}</p>
-                <p><strong> Total Saldo Clientes:</strong> ${{saldoC}}</p>
+                <p><strong>Facturas A:</strong> ${{saldoClientes[0]}}</p>
+                <p><strong>Facturas B:</strong> ${{saldoClientes[1]}}</p>
+                <p><strong> Total Saldo Clientes:</strong> ${{saldoClientes[2]}}</p>
             </div>
         </div>
         <div class="column card">
@@ -49,23 +49,23 @@
             </h2>
             <div class="card-content">
                 <h3 class="has-text-centered"><strong>Pagos</strong></h3>
-                <p><strong>Pago proveedores A:</strong> ${{sa}}</p>
-                <p><strong>Pago proveedores B:</strong> ${{sb}}</p>
-                <p><strong>Total Pago a Proveedores:</strong> ${{pagos}}</p>
+                <p><strong>Pago proveedores A:</strong> ${{pagos_a}}</p>
+                <p><strong>Pago proveedores B:</strong> ${{pagos_b}}</p>
+                <p><strong>Total Pago a Proveedores:</strong> ${{pagos_a + pagos_b}}</p>
             </div>
             <div class="card-content">
                     <h3 class="has-text-centered"><strong>Cobranzas</strong></h3>
-                    <p><strong>Cobro Clientes A:</strong> ${{ea}}</p>
-                    <p><strong>Cobro Clientes B:</strong> ${{eb}}</p>
-                    <p><strong>Total Cobro a Clientes:</strong> ${{cobros}}</p>
+                    <p><strong>Cobro Clientes A:</strong> ${{cobranzas_a}}</p>
+                    <p><strong>Cobro Clientes B:</strong> ${{cobranzas_b}}</p>
+                    <p><strong>Total Cobro a Clientes:</strong> ${{cobranzas_a + cobranzas_b}}</p>
                 </div>
             <p>{{cobros}}</p>
         </div>
         <div class="column card">
             <h2 class="subtitle card-header"><strong>Acumulado productos</strong></h2>
-            <p><strong>Acumulado productos A:</strong> ${{prodAcum_a }}</p>
-            <p><strong>Acumulado productos B:</strong> ${{prodAcum_b }}</p>
-            <p><strong>Acumulado Total en productos:</strong> ${{totalP_A}}</p>
+            <p><strong>Acumulado productos A:</strong> ${{acum[0]}}</p>
+            <p><strong>Acumulado productos B:</strong> ${{acum[1]}}</p>
+            <p><strong>Acumulado Total en productos:</strong> ${{acum[2]}}</p>
         </div>
     </div>
     <div class="section columns-none has-text-centered">

@@ -214,7 +214,7 @@ def editar_proveedor(id):
 @app.route('/proveedor/<id>')
 def detalle_proveedor(id):
     p = Proveedor.query.filter_by(id=id).first_or_404()
-    return render_template('detalle-proveedor.html', p=p, title='Detalle de {}'.format(p.nombre))
+    return render_template('detalle-proveedor.html', p=p,enviosEnVentas=p.envio_ventas,enviosEnCompras=p.envio_compras,servicios = servicios, title='Detalle de {}'.format(p.nombre))
 
 
 @app.route('/borrar/<id>/proveedor')
@@ -362,21 +362,23 @@ def cargar_compra():
             factura_flete = form.factura_flete.data,
         )
         compra.get_unit_price()
-        compra.actualizar_saldo_flete(suma=True)
 
         if form.flete.data != 0:
             flete = Proveedor.query.filter_by(id=form.flete.data).first()
+            compra.actualizar_saldo_flete(suma=True)
+            compra.envio.append(flete)
         else:
-            flete = None
+            pass
 
         compra.actualizar_saldo_proveedor(suma=True)
+        
         compra.producto.actualizar_stock(
             cantidad = form.cantidad.data,
             factura = form.factura_proveedor.data,
             entrada = True
         )
-        compra.envio.append(flete)
-        compra.actualizar_saldo_flete(suma=True)
+        
+        # compra.actualizar_saldo_flete(suma=True)
         db.session.add(compra)
         db.session.commit()
         compra.producto.calcular_precio_unitario()
@@ -417,6 +419,90 @@ def borrar_compra(id):
 #TODO: Redefinir las peticiones teniendo en cuenta las facturas
 @app.route('/caja')
 def caja():
+    #Productos [ACTIVOS] con cantidad > de 0
+    productos = Producto.query.filter(
+        Producto.state & ((Producto.cantidad_a>0)|(Producto.cantidad_b>0)|
+        (Producto.cantidad_a<0)|(Producto.cantidad_b<0))
+    ).all()
+
+    #Clientes [ACTIVOS] con saldos != de 0
+    clientes = Cliente.query.filter(
+        (Cliente.state) & ((Cliente.saldo_a > 0) | (Cliente.saldo_b > 0)|(Cliente.saldo_a < 0 )| (Cliente.saldo_b < 0))
+        ).all()
+
+    #Proveedores [ACTIVOS] con saldos != de 0
+    proveedores = Proveedor.query.filter(
+        Proveedor.state & ((Proveedor.saldo_a>0)|(Proveedor.saldo_b>0)|
+        (Proveedor.saldo_a<0)|(Proveedor.saldo_b<0))
+    ).all()
+
+    #Lista de entradas y salidas que no se hayan borrado
+    inOut = Cobro.query.filter_by(state=True).all() 
+
+    entradas = list(filter(lambda e: e.entrada, inOut))
+    entradas_a = list(filter(lambda entrada: entrada.factura, entradas))
+    entradas_b = list(filter(lambda entrada: not(entrada.factura),entradas))
+
+    salidas = list(filter(lambda e: not(e.entrada),inOut))
+    salidas_a = list(filter(lambda salida: salida.factura, salidas))
+    salidas_b = list(filter(lambda salida: not(salida.factura), salidas))
+
+    def getMonto(lista):
+        """ Obtiene de Cobro los de cada monto y los suma"""
+        monto = 0.0
+        for element in lista:
+            monto += element.monto
+        return round(monto,2)
+
+    cobranzas_a = getMonto(entradas_a)
+    cobranzas_b = getMonto(entradas_b)
+    pagos_a = getMonto(salidas_a)
+    pagos_b = getMonto(salidas_b)
+    caja = cobranzas_a+cobranzas_b-pagos_a-pagos_b
+    def getAcumuladoProductos(lista):
+        acum_a = 0.0
+        acum_b = 0.0
+        for element in lista:
+            acum_a += (element.cantidad_a*element.precio_compra)
+            acum_b += (element.cantidad_b*element.precio_compra)
+        return [round(acum_a,2), round(acum_b,2), round((acum_a+acum_b),2)]
+    acumuladoProductos = getAcumuladoProductos(productos)
+
+    def getSaldos(lista):
+        """ Devuelve una lista con los saldos_a y saldos_b y ambos sumados"""
+        saldo_a= 0.0
+        saldo_b = 0.0
+        saldoTotal = 0.0
+        for element in lista:
+            saldo_a += element.saldo_a
+            saldo_b += element.saldo_b
+            saldoTotal = saldo_a + saldo_b
+        return [round(saldo_a,2) , round(saldo_b,2), round(saldoTotal,2)] 
+
+    saldoClientes = getSaldos(clientes)
+    saldoProveedores = getSaldos(proveedores)
+
+    chequesDeTerceros = Cheque.query.filter(Cheque.state & Cheque.es_de_tercero & (not Cheque.acreditado)).all()
+
+    chequesPropios = Cheque.query.filter(Cheque.state & (not Cheque.es_de_tercero) &(not Cheque.acreditado)).all()
+    
+    balance = saldoClientes[2]+acumuladoProductos[2]+caja-saldoProveedores[2]
+    return render_template(
+        'caja.html',
+        title='Caja',
+        saldoClientes = saldoClientes,
+        saldoProveedores = saldoProveedores,
+        pagos_a = pagos_a,
+        pagos_b = pagos_b,
+        cobranzas_a = cobranzas_a,
+        cobranzas_b = cobranzas_b,
+        acum = acumuladoProductos,
+        balance=balance,
+        caja=caja
+    )
+
+
+""" def caja():
     totalProdAcum = 0.0 #activos en productos
     prodAcum_a= 0.0 #activos productos factura A
     prodAcum_b= 0.0 #activos productos factura V
@@ -431,9 +517,9 @@ def caja():
     cheques_in =0.0 # cheques que se registraron como cobro
     cheques_out = 0.0 #cheuqes registrados como pagos
 
-    prod = Producto.query.filter((Producto.cantidad_a > 0) | (Producto.cantidad_b > 0)).all()
+    prod = Producto.query.filter(((Producto.cantidad_a > 0) | (Producto.cantidad_b > 0))&(Producto.state)).all()
     
-    clientes = Cliente.query.filter((Cliente.saldo_a > 0) | (Cliente.saldo_b > 0)|(Cliente.saldo_a < 0 )| (Cliente.saldo_b < 0)).all()
+    clientes = Cliente.query.filter(((Cliente.saldo_a > 0) | (Cliente.saldo_b > 0)|(Cliente.saldo_a < 0 )| (Cliente.saldo_b < 0))&(Cliente.state)).all()
     
     proveedores = Proveedor.query.filter((Proveedor.saldo_a > 0) | (Proveedor.saldo_b > 0)|(Proveedor.saldo_a < 0) | (Proveedor.saldo_b < 0)).all()
 
@@ -524,7 +610,7 @@ def caja():
         sb=salidas_b,
         ea=entradas_a,
         eb=entradas_b
-        )
+        ) """
 
 @app.route('/clientes/saldos')
 def saldo_clientes():
@@ -596,7 +682,7 @@ def cobrar():
             return redirect(url_for('cargar_cheque', id=cobro.id))
         else:
             flash('Cobro en efectivo cargado con exito!.')
-            return redirect(url_for('listar-Cobros'))
+            return redirect(url_for('listar-cobros'))
     return render_template('formulario-de-carga.html', title='Cargar cobro de un cliente', form=form)
 
 @app.route('/pagar', methods=['GET','POST'])
