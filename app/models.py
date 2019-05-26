@@ -2,7 +2,7 @@ from datetime import datetime
 from app import db
 
 # Tablas relacionales
-p_venta = db.Table('p_venta',
+""" p_venta = db.Table('p_venta',
     db.Column('producto_id', db.Integer, db.ForeignKey('producto.id')),
     db.Column('venta_id', db.Integer, db.ForeignKey('venta.id'))
 )
@@ -23,6 +23,13 @@ venta_envio = db.Table(
     db.Column('porveedor_id', db.Integer, db.ForeignKey('proveedor.id')),
     db.Column('venta_id', db.Integer, db.ForeignKey('venta.id')),
 )
+ """
+class Servicio(db.Model):
+    id = db.Column(db.Integer, primary_key=True, index=True)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), index=True)
+    compra_id = db.Column(db.Integer, db.ForeignKey('compra.id'), index=True)
+    venta_id = db.Column(db.Integer, db.ForeignKey('venta.id'), index=True)
+
 
 #Modelos de Compra, venta, producto, cliente, proveedor (prod y flete)
 class Cliente(db.Model):
@@ -102,9 +109,9 @@ class Venta(db.Model):
 
     #ref a tabla de asociacion entre la Venta y el proveedor de envio
     envio = db.relationship(
-        'Proveedor',
-        secondary = venta_envio,
-        backref = db.backref('envio_ventas', lazy='dynamic')
+        'Servicio',
+        backref = 'venta',
+        uselist = False
         )
 
     #METODOS
@@ -212,6 +219,10 @@ class Cheque(db.Model):
     es_de_tercero = db.Column(db.Boolean)
     acreditado = db.Column(db.Boolean, default=False)
     es_entrada = db.Column(db.Boolean)
+    # TODO: Metodo de acreditado de cheque
+    def acreditar (self):
+        self.acreditado = True
+
 
 
 class Proveedor(db.Model):
@@ -232,6 +243,7 @@ class Proveedor(db.Model):
     cobros = db.relationship('Cobro', backref='proveedor', lazy='dynamic')
     compras = db.relationship('Compra', backref='proveedor', lazy='dynamic')
     state = db.Column(db.Boolean, default=True)
+    envios = db.relationship('Servicio', backref='flete', lazy='dynamic')
     
     def actualizar_saldo(self, monto, factura, suma):
         """monto: para que reste del saldo tiene que ser <0
@@ -254,7 +266,7 @@ class Proveedor(db.Model):
     #TODO: Faltan metodos de borrar proveedor....
 
     def __repr__(self):
-        return '<Proveedor {}>'.forman(self.nombre)
+        return '<Proveedor {}>'.format(self.nombre)
 
 
 class Compra(db.Model):
@@ -269,9 +281,9 @@ class Compra(db.Model):
 
     #ref a tabla de asociacion entre la compra y el proveedor de envio
     envio = db.relationship(
-        'Proveedor',
-        secondary = compra_envio,
-        backref = db.backref('envio_compras', lazy='dynamic')
+        'Servicio',
+        backref = 'compra',
+        uselist = False
         )
 
     # compra_id = db.Column(db.Integer, db.ForeignKey('compra.id'))
@@ -386,7 +398,7 @@ class Producto(db.Model):
             else:
                 self.cantidad_a -= cantidad
                 if self.cantidad_a < 0:
-                    self.catidad_b += self.cantidad_a #resta a b lo que le falta para completar el pedido
+                    self.cantidad_b += self.cantidad_a #resta a b lo que le falta para completar el pedido
                     self.cantidad_a = 0 #restaura a 0 para que no haya cant <0
         else:
             if entrada:
@@ -394,7 +406,7 @@ class Producto(db.Model):
             else:
                 self.cantidad_b -= cantidad
                 if self.cantidad_b < 0:
-                    self.catidad_a += self.cantidad_vb #en este momento b es < 0
+                    self.cantidad_a += self.cantidad_b #en este momento b es < 0
                     self.cantidad_b = 0 #restaura b 0 para evitar cant < 0
 
     def get_raw_prom(self):
