@@ -39,8 +39,9 @@
 <div class="section">
     <div class="tabs is-medium is-toggle is-centered">
         <ul>
-            <li id="v" class="btn is-active"><a onclick="openTab('ventas')">Compras</a></li>
+            <li id="v" class="btn "><a onclick="openTab('ventas')">Compras</a></li>
             <li id="c" class="btn"><a onclick="openTab('cobros')">Pagos</a></li>
+            <li id="s" class="btn"><a onclick="openTab('servicios')">Servicios</a></li>
         </ul>
     </div>
     <div class="container">
@@ -85,6 +86,7 @@
                 {% endfor %}
             </tbody>
         </table>
+            
         <table id="cobros" class="table is-hoverable" style="display:none;">
             <thead>
                     <tr>
@@ -113,6 +115,24 @@
                     </tr>
                 {% endif %}
                 {% endfor %}
+            </tbody>
+        </table>
+        <table id="servicios" class="table is-hoverable" style="display: none">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Factura</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {% for s in servicios %}
+                        <td>{{s.fecha}}</td>
+                        <td>{{s.factura_flete}}</td>
+                        <td>{{s.precio_flete}}</td>
+                    {% endfor %}
+                </tr>
             </tbody>
         </table>
     </div>
