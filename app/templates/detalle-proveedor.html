@@ -126,13 +126,21 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    {% for s in servicios %}
-                        <td>{{s.fecha}}</td>
-                        <td>{{s.factura_flete}}</td>
-                        <td>{{s.precio_flete}}</td>
-                    {% endfor %}
+                {% for s in envios %}
+                    <tr>
+                    {% if s.venta %}
+                    <td>{{s.venta.fecha}}</td>
+                    <td>{{s.venta.factura_flete}}</td>
+                    <td>{{s.venta.costo_flete}}</td>
+                        
+                    {% else %}
+                    <td>{{s.compra.fecha}}</td>
+                    <td>{{s.compra.factura_flete}}</td>
+                    <td>{{s.compra.precio_flete}}</td>
+                    {% endif %}
                 </tr>
+                    
+                    {% endfor %}
             </tbody>
         </table>
     </div>

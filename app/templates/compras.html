@@ -33,8 +33,8 @@
                 <td>${{c.precio_unitario}}</td>
                 <td>${{c.precio_carga}}</td>
                 <td>
-                    {% if c.envio[0] %}
-                        {{c.envio[0].nombre}}
+                    {% if c.envio.flete %}
+                        {{c.envio.flete.nombre}}
                     {% else %}
                         sin envio
                     {% endif %}</td>

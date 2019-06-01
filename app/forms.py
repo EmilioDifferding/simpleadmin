@@ -1,11 +1,18 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, DecimalField,DateField, FloatField, SelectField, TextAreaField, RadioField
+from wtforms import StringField, BooleanField, SubmitField, DecimalField,DateField, FloatField, SelectField, TextAreaField, RadioField, IntegerField
 from wtforms.validators import DataRequired, Email, ValidationError, Optional, Length
 from app.models import Proveedor, Producto, Cliente, Compra, Venta
 from datetime import date, datetime
 
 from app.models import Proveedor,Producto,Cliente
 
+
+class CargarChequeraForm(FlaskForm):
+    numero_chequera = IntegerField('Numero de chequera', validators=[DataRequired()])
+    banco = StringField('Entidad Bancaria')
+    cantidad_cheques = IntegerField('Cantidad de cheques, 20 por defecto', validators=[Optional()])
+    inicio = StringField('numero inicial de los cheques', validators=[DataRequired()])
+    submit = SubmitField('Aceptar')
 
 class CargarClienteForm(FlaskForm):
     nombre = StringField('Nombre de Empresa', validators=[DataRequired()])
@@ -205,3 +212,7 @@ class CargarChequeForm(FlaskForm):
 class ChequedeTercero(FlaskForm):
     cheques = SelectField('seleccione el cheque', coerce=int)
     submit = SubmitField('submit')
+
+class ChequeChequera(FlaskForm):
+    chequera = SelectField('chequera', coerce=int)
+    

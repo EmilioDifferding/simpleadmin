@@ -1,14 +1,40 @@
-from flask import render_template, url_for, redirect, flash, request
+from flask import render_template, url_for, redirect,jsonify, flash, request
 from app import app, db
-from app.models import Cliente,Producto,Proveedor,Venta,Compra, Cobro, Cheque
+from app.models import Cliente,Producto,Proveedor,Venta,Compra, Cobro, Cheque, Servicio, Chequera
 
 #Formularios
-from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm,ChequedeTercero
+from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm,ChequedeTercero, CargarChequeraForm
 
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template('base.html', title='Pagina proncipal')
+    return render_template('base.html', title='Pagina principal')
+
+@app.route('/precio/<id>')
+def precio(id):
+    p = Producto.query.filter_by(id=id).first()
+    return str(p.precio)
+
+
+@app.route('/chequera',methods=['GET','POST'])
+def c ():
+    form = CargarChequeForm()
+    chequeras = Chequera.query.filter_by(state = True).all()
+    lista = list(filter(lambda chequera: not chequera.state, chequeras))
+    listaChequera = [{'id': c.id, 'numero':c.numero_chequera, 'banco':c.banco} for c in lista]
+    c = chequeras
+    return render_template('pruebaform.html', chequeras = c, form=form)
+
+@app.route('/_obtener_cheques/<id>')
+def obtener_cheqeus(id):
+    chequera = Chequera.query.filter_by(id = id).first()
+    cheques = Cheque.query.filter_by(chequera = chequera)
+    listaCheques=list(filter(lambda cheque: not cheque.acreditado, cheques))
+    numeroCheque = [{'id':c.id , 'numero':c.numero} for c in listaCheques]
+    print (numeroCheque)
+    print(id)
+    return jsonify( numeroCheque)
+    # return str([chequera.cheques.count(), chequera.banco, numeroCheque])
 
 @app.route('/cargar-producto', methods=['GET','POST'])
 def cargar_producto():
@@ -214,7 +240,8 @@ def editar_proveedor(id):
 @app.route('/proveedor/<id>')
 def detalle_proveedor(id):
     p = Proveedor.query.filter_by(id=id).first_or_404()
-    return render_template('detalle-proveedor.html', p=p,enviosEnVentas=p.envio_ventas,enviosEnCompras=p.envio_compras,servicios = servicios, title='Detalle de {}'.format(p.nombre))
+    envios = Servicio.query.filter_by(proveedor_id=p.id).all()
+    return render_template('detalle-proveedor.html', p=p,envios=envios, title='Detalle de {}'.format(p.nombre))
 
 
 @app.route('/borrar/<id>/proveedor')
@@ -255,7 +282,7 @@ def cargar_venta():
         else:
             cliente = Cliente.query.filter_by(id = form.clientes.data).first()
             if form.flete.data != 0:
-                flete = Proveedor.query.filter_by(id=form.flete.data).filter_by(state=True).first()
+                flete = Proveedor.query.filter_by(id=form.flete.data).first()
             else: flete = None
         
         venta = Venta(
@@ -273,19 +300,20 @@ def cargar_venta():
             factura_cliente = form.factura_cliente.data,
             factura_flete = form.factura_flete.data
             )
-        db.session.add(venta)
+        if flete is not None:
+            service = Servicio(flete=flete, venta=venta)
+            db.session.add(service)
+            venta.actualizar_saldo_proveedor(suma=True)
+        else:
+            db.session.add(venta)
         venta.get_utility()
         venta.producto.actualizar_stock(
             cantidad = form.cantidad.data,
             factura = form.factura_cliente.data,
-            entrada = False
-            )
+            entrada = False # porque es salida de producto, se resta del stock
+        )
         venta.actualizar_saldo_cliente(suma=True)
-        if flete is not None:
-            venta.envio.append(flete)
-            venta.actualizar_saldo_proveedor(suma=True)
         db.session.commit()
-        flash('Venta cargada con exito!')
         return redirect(url_for('listar_ventas'))
     return render_template(
         'formulario-de-carga.html',
@@ -362,11 +390,13 @@ def cargar_compra():
             factura_flete = form.factura_flete.data,
         )
         compra.get_unit_price()
+        db.session.add(compra)
 
         if form.flete.data != 0:
             flete = Proveedor.query.filter_by(id=form.flete.data).first()
+            servicio = Servicio(flete=flete, compra=compra)
             compra.actualizar_saldo_flete(suma=True)
-            compra.envio.append(flete)
+            
         else:
             pass
 
@@ -379,7 +409,8 @@ def cargar_compra():
         )
         
         # compra.actualizar_saldo_flete(suma=True)
-        db.session.add(compra)
+        
+        db.session.add(servicio)
         db.session.commit()
         compra.producto.calcular_precio_unitario()
         flash('Compra cargada con Exito!')
@@ -682,7 +713,7 @@ def cobrar():
             return redirect(url_for('cargar_cheque', id=cobro.id))
         else:
             flash('Cobro en efectivo cargado con exito!.')
-            return redirect(url_for('listar-cobros'))
+            return redirect(url_for('listar_cobros'))
     return render_template('formulario-de-carga.html', title='Cargar cobro de un cliente', form=form)
 
 @app.route('/pagar', methods=['GET','POST'])
@@ -751,6 +782,27 @@ def cargar_cheque(id):
     elif request.method =='GET':
         form.importe.data = cobro.monto
     return render_template('formulario-de-carga.html', title='Cargar Cheque', form=form, control=control, id=cobro.id)
+
+@app.route('/cargar-chequera', methods=['GET','POST'])
+def cargar_chequera():
+    form = CargarChequeraForm()
+    ultima_chequera = Chequera.query.all()
+    if form.validate_on_submit():
+        chequera = Chequera(
+            numero_chequera = form.numero_chequera.data,
+            cantidad_cheques = form.cantidad_cheques.data,
+            banco = form.banco.data,
+        )
+        db.session.add(chequera)
+        db.session.commit()
+        chequera.generate(inicio=form.inicio.data, chequera=chequera)
+        db.session.commit()
+        flash('Chequera cargada!')
+    elif request.method == 'GET':
+        form.numero_chequera.data = len(ultima_chequera)+ 1
+    return render_template('formulario-de-carga.html', form=form, title='Cargar Chequera')
+    
+
 
 @app.route('/cheque-tercero/<id>',methods=['GET','POST'])
 def cheque_tercero(id):

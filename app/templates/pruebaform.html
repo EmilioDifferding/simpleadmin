@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section columns">
+        <div class="column">
+                <div class="field">
+                    <label for="chequera"class="label">Chequera</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="chequera" id="chequera">
+                                {% for chequera in chequeras%}
+                                    <option value="{{chequera.id}}">Nº{{chequera.numero_chequera}} {{chequera.banco}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="field">
+                    <label for="lista-cheques" class="label">Cheques</label>
+                    <div class="control">
+                        <div class="select">
+                            <select name="cheques" id="cheques">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="column">
+                <form calss=" form column" method="POST">
+                    {{form.hidden_tag()}}
+                    <div class="columns">
+                        <div class="column">
+                            <div class="field">
+                                {{form.fecha.label}}
+                                <div class="control">
+                                    {{form.fecha()}}
+                                </div>
+                            </div>
+                            <div class="field">
+                                {{form.fecha_emision.label}}
+                                <div class="control">
+                                    {{form.fecha_emision()}}
+                                </div>
+                            </div>
+                            <div class="field">
+                                {{form.fecha_cobro.label}}
+                                <div class="control">
+                                    {{form.fecha_cobro()}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="field">
+                                {{form.numero.label}}
+                                <div class="control">
+                                    {{form.numero()}}
+                                </div>
+                            </div>
+                            <div class="field">
+                                {{form.importe.label}}
+                                <div class="control">
+                                    {{form.importe()}}
+                                </div>
+                            </div>
+                            <div class="field">
+                                {{form.comentario.label}}
+                                <div class="control">
+                                    {{form.comentario()}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="no-column has-text-right">
+                        {{form.submit()}}
+                    </div>
+                </form>
+            </div>
+</div>
+<script>
+    let campo = document.getElementById('chequera');
+    let lista = document.getElementById('cheques');
+    campo.addEventListener('change',getlista);
+    lista.selectedIndex = 0;
+    function getlista(e){
+        lista.length=0;
+        const url = '/_obtener_cheques/'+campo.value;
+        const request = new XMLHttpRequest();
+        request.open('GET', url, true);
+        request.onload = () =>{
+            if (request.status === 200){
+                const data = JSON.parse(request.responseText);
+                let option;
+                let i;
+                for (i=0; i< data.length; i++){
+                    option = document.createElement('option');
+                    option.text = data[i].numero;
+                    option.value = data[i].id;
+                    lista.add(option)
+                }
+            }else{
+
+            }
+        }
+        request.send()
+    }
+    getlista();
+
+    numeroCheque=document.getElementById('numero');
+    lista.addEventListener('change', updateNumber);
+    function updateNumber(e){
+        numeroCheque.value = lista.selectedOptions[0].text
+    }
+</script>
+
+
+
+{% endblock content %}
+<script>
+    let campo = document.getElementById('chequera');
+    let chequeras;
+    campo.addEventListener('change',getChequeras)
+    function getChequeras(e){
+        let http = new XMLHttpRequest();
+        http.onreadystatechange = function(){
+            if (this.readyState == 4 && this.status==200){
+                chequeras = JSON.parse(this.responseText);
+                console.log('TIPO'+typeof(chequeras))
+                console.log(chequeras)
+                let option;
+                let i;
+                for (i=0; i<chequeras.length; i++){
+                    console.log(i)
+                }
+            }
+        };
+        http.open('GET', '/_obtener_cheques/'+campo.value);
+        http.send()
+    }
+    chequerassis = getChequeras()
+    console.log(chequerassis);
+    
+    let listaCheques = document.getElementById('cheques')
+
+    
+</script>
+
+
+<form method="post" class="form columns">
+        <div class="column">
+            <div class="field">
+                <label for="chequera"class="label">Chequera</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="chequera" id="chequera">
+                            {% for chequera in chequeras%}
+                                <option value="{{chequera.id}}">Nº{{chequera.numero_chequera}} {{chequera.banco}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="lista-cheques" class="label">Cheques</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="cheques" id="cheques">
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column datos-cheque">
+            <p>Cargue los datos del cheque</p>
+                <div class="field is-horizontal">
+                    <label for="fecha_emision"class="label">Fecha de emisión </label>
+                    <div class="control">
+                        <input class="input" type='date' name="fecha_emision" id="fecha_emision">
+                    </div>
+                </div>
+                <div class="field is-horizontal">
+                    <label for="fecha_cobro" class="label">Fecha Acreditación </label>
+                    <div class="control">
+                        <input class="input" type='date' name="fecha_cobro" id="fecha_cobro">
+                    </div>
+                </div>
+                <div class="field is-horizontal">
+                    <label for="numero" class="label">Numero Cheque </label>
+                    <div class="control">
+                        <input class="input" id="numero"name="numero" type="text">
+                    </div>
+                </div>
+                <div class="field is-horizontal ">
+                    <label for="importe" class="label">Importe</label>
+                    <div class="control">
+                        <input type="text" class="input" name=importe id=importe >
+                    </div>
+                </div>
+        </div>
+    </form>

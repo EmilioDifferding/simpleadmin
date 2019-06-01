@@ -50,7 +50,7 @@ class Cliente(db.Model):
     saldo_a = db.Column(db.Float, default= 0.00)
     saldo_b = db.Column(db.Float, default=0.00)
     cobros = db.relationship('Cobro', backref='cliente', lazy='dynamic')
-    state = db.Column(db.Boolean, default=True)
+
 
     def borrar(self):
         if (self.saldo_a > 0 | saldo_a < 0 | saldo_b < 0 | saldo_b > 0):
@@ -128,9 +128,8 @@ class Venta(db.Model):
         )
 
     def actualizar_saldo_proveedor(self, suma):
-        if len(self.envio) > 0:
-            # pf = Proveedor.query.filter_by(id=self.envio[0].id).first()
-            self.envio[0].actualizar_saldo(
+        if self.envio.flete is not None:
+            self.envio.flete.actualizar_saldo(
                 monto = self.costo_flete,
                 factura = self.factura_flete,
                 suma = suma
@@ -207,22 +206,61 @@ class Cobro(db.Model):
 class Cheque(db.Model):
     id = db.Column(db.Integer, unique=True, index=True, primary_key=True)
     cobro_id = db.Column(db.Integer, db.ForeignKey('cobro.id'), index=True)
+    chequera_id = db.Column(db.Integer, db.ForeignKey('chequera.id'))
     fecha = db.Column(db.DateTime())
     fecha_emision = db.Column(db.DateTime)
     fecha_cobro = db.Column(db.DateTime)
     banco = db.Column(db.String(32))
     numero = db.Column(db.String())
-    importe = db.Column(db.Float)
+    importe = db.Column(db.Float, default=0.0)
     comentario = db.Column(db.String(240))
     state = db.Column(db.Boolean, default=True)
     factura = db.Column(db.Boolean)
     es_de_tercero = db.Column(db.Boolean)
     acreditado = db.Column(db.Boolean, default=False)
-    es_entrada = db.Column(db.Boolean)
+    es_entrada = db.Column(db.Boolean, default=False)
+    emitido = db.Column(db.Boolean, default=False)
     # TODO: Metodo de acreditado de cheque
     def acreditar (self):
         self.acreditado = True
+    
+    def emitir(self):
+        if self.es_de_tercero & (not self.emitido):
+            self.emitir = True
 
+class Chequera(db.Model):
+    id =db.Column(db.Integer, primary_key=True, index=True)
+    numero_chequera = db.Column(db.Integer, unique=True)
+    cheques = db.relationship('Cheque', backref='chequera', lazy='dynamic')
+    cantidad_cheques = db.Column(db.Integer, default=20)
+    state = db.Column(db.Boolean, default=True)
+    banco = db.Column(db.String(32))
+    
+    def getCeros(self, inicio):
+        """ determina los ceros iniciales si es que los hay  """
+        ceros = []
+        res=''
+        for e in inicio:
+            if e != '0':
+                break
+            else:
+                ceros.append(e)
+        for e in ceros:
+            res += e
+        return res
+    
+    def generate(self, inicio, chequera):
+        n = int(inicio)
+        for c in range(self.cantidad_cheques):
+            Cheque(
+                numero = self.getCeros(inicio)+str(n),
+                chequera = chequera,
+                banco = self.banco,
+                es_de_tercero = False,
+                acreditado=False,
+                emitido = False,
+            )
+            n += 1
 
 
 class Proveedor(db.Model):
@@ -316,8 +354,8 @@ class Compra(db.Model):
         )
     
     def actualizar_saldo_flete(self, suma):
-        if len(self.envio) > 0:
-                self.envio[0].actualizar_saldo(
+        if self.envio:
+                self.envio.flete.actualizar_saldo(
                     monto = self.precio_flete,
                     factura = self.factura_flete,
                     suma = suma
