@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="section columns">
+        <div class="container column">
+            <div class="field">
+                <label for="proveedor" class="label">Proveedor</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="proveedor" id="proveedor">{# cargaraca la lista de proveedores#}
+                            {% for proveedor in proveedores %}
+                                <option value="{{proveedor.id}}">{{proveedor.nombre}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label for="monto" class="label">Monto</label>
+                <div class="control">
+                    <input type="text" class="input" id="monto">
+                </div>
+            </div>
+            <div class="field">
+                <label for="comentario" class="label">Comentario</label>
+                <div class="control">
+                    <textarea class="textarea" placeholder="Comentario" name=comentario id="comentario"></textarea>
+                </div>
+            </div>
+            <div class="field">
+                <div class="control">
+                    <label  class="radio">efectivo
+                        <input class="radio-input"type="radio" name="pago" value="efectivo" checked>
+                    </label>
+                    <label class=radio> cheqeura
+                        <input class="radio-input"type="radio" name="pago" value="chequera">
+                    </label>
+                    <label class=radio>cheque 3ro
+                        <input class="radio-input"type="radio" name="pago" value="cheque3ro">
+                    </label>
+                </div>
+            </div>
+            <div class="field">
+                <label for="factura" class="label">Factura</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="factura" id="factura">
+                            <option value="0">A</option>
+                            <option value="1">B</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div> {# FIN SELECCION DE PROVEEDOR #}
+        <div class="container column">
+            {# INICIO CARGA CHEQUE #}
+            <div class="" id=cheque-propio style="display: none"> {# style="display: none" #}
+                    <div class="field">
+                        <label for="chequera"class="label">Chequera</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="chequera" id="chequera">
+                                {% for chequera in chequeras%}
+                                    <option value="{{chequera.id}}">Nº{{chequera.numero_chequera}} {{chequera.banco}}</option>
+                                {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="field">
+                        <label for="lista-cheques" class="label">Cheques</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="cheques" id="cheques">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fecha_emision" class="label">Fecha emisión</label>
+                        <div class="control">
+                            <input type="date" class="input" id="fecha_emision">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="fecha_cobro" class="label">Fecha de acreditación</label>
+                        <div class="control">
+                            <input type="date" class="input" id="fecha_cobro">
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="" id ="cheque3ro" style="display:none;">
+                    <p>aca va el form de cheque de terceros</p>
+                </div>
+        </div>
+    </div>
+    <input type="button" value="caca" id="generar">
+
+
+
+
+
+<script>
+    let chequePropio = document.getElementById('cheque-propio');
+    let chequeTercero = document.getElementById('cheque3ro');
+    let formaDePago = document.getElementsByClassName('radio-input');
+    let fp;
+    for (let i = 0; i<formaDePago.length;i++){
+        formaDePago[i].addEventListener('change', getFormaDePago)
+    }
+    let campo = document.getElementById('chequera');
+    let lista = document.getElementById('cheques');
+    campo.addEventListener('change',getlista);
+    lista.selectedIndex = 0;
+
+    function getFormaDePago(e){
+        let index;
+        for (index=0; index<formaDePago.length; index++){
+            if (formaDePago[index].checked){
+                switch (formaDePago[index].value){
+                    case 'efectivo':
+                        chequePropio.style.display = 'none';
+                        chequeTercero.style.display = 'none';
+                        console.log(formaDePago[index].value);
+                        fp = formaDePago[index].value;
+                        break;
+                    case 'chequera':
+                    chequePropio.style.display = 'block';
+                    chequeTercero.style.display = 'none';
+                    console.log(formaDePago[index].value);
+                    fp = formaDePago[index].value;
+                    break;
+
+                    case 'cheque3ro':
+                    chequePropio.style.display = 'none';
+                    chequeTercero.style.display = 'block';
+                    console.log(formaDePago[index].value);
+                    fp = formaDePago[index].value;
+                    break;
+                }
+            }
+        }
+    }
+
+    
+
+    function getlista(e){
+        lista.length=0;
+        const url = '/_obtener_cheques/'+campo.value;
+        const request = new XMLHttpRequest();
+        request.open('GET', url, true);
+        request.onload = () =>{
+            if (request.status === 200){
+                const data = JSON.parse(request.responseText);
+                let option;
+                let i;
+                for (i=0; i< data.length; i++){
+                    option = document.createElement('option');
+                    option.text = data[i].numero;
+                    option.value = data[i].id;
+                    lista.add(option)
+                }
+            }
+        }
+        request.send()
+    } getlista()
+
+    numeroCheque=document.getElementById('numero');
+    lista.addEventListener('change', updateNumber);
+    function updateNumber(e){
+        numeroCheque.value = lista.selectedOptions[0].text
+    }
+    
+
+    let btn = document.getElementById('generar');
+    btn.addEventListener('click', gjson);
+    function gjson(e){
+        let p = document.getElementById('proveedor').value;
+        let m = document.getElementById('monto').value;
+        let c = document.getElementById('comentario').value;
+        let hj;
+        let proveedor = {
+            id:document.getElementById('proveedor').value,
+            monto:parseInt(m),
+            comentario:c,
+            factura:factura.value,
+            forma_pago:fp
+        }
+        if (fp == 'chequera'){
+            hj ={
+                fecha_cobro:fecha_cobro.value,
+                fecha_emision:fecha_emision.value,
+                chequera:chequera.value,
+                factura:factura.value,
+                cheque:cheques.value
+            }
+        }
+        console.log(JSON.stringify({proveedor,hj }))
+        let http = new XMLHttpRequest();
+        let url = "/decodificar";
+        http.open("POST", url,true);
+        http.setRequestHeader("Content-Type", "application/json");
+        http.onreadystatechange = function(){
+            if(http.readyState == 4 && http.status == 200) { 
+                //aqui obtienes la respuesta de tu peticion
+                console.log(http.responseText);
+                alert(http.responseText);
+            }
+        }
+        http.send(JSON.stringify({proveedor,hj }))
+    }
+    
+</script>
+
+
+{% endblock content %}

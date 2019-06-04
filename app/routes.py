@@ -10,6 +10,32 @@ from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, 
 def index():
     return render_template('base.html', title='Pagina principal')
 
+
+@app.route('/decodificar',methods=['GET','POST'])
+def decodificar():
+    print(request.is_json)
+    c = request.get_json()
+    if int(c['proveedor']['factura']) < 1:
+        factura = True
+    else:
+        factura = False
+    cobro = Cobro(
+        # forma_pago = c['forma_pago'],
+        monto =int(c['proveedor']['monto']),
+        comentario=c['proveedor']['comentario'],
+        proveedor = Proveedor.query.filter_by(id=c['proveedor']['id']).first(),
+        entrada = False,
+        factura = factura,
+    )
+    db.session.add(cobro)
+    db.session.commit()
+    print (cobro)
+    print(cobro.proveedor.nombre)
+    print(c['proveedor']['forma_pago'])
+    print(c)
+    return str(c)
+
+
 @app.route('/precio/<id>')
 def precio(id):
     p = Producto.query.filter_by(id=id).first()
@@ -20,10 +46,11 @@ def precio(id):
 def c ():
     form = CargarChequeForm()
     chequeras = Chequera.query.filter_by(state = True).all()
+    p = Proveedor.query.filter_by(state=True).all()
     lista = list(filter(lambda chequera: not chequera.state, chequeras))
     listaChequera = [{'id': c.id, 'numero':c.numero_chequera, 'banco':c.banco} for c in lista]
     c = chequeras
-    return render_template('pruebaform.html', chequeras = c, form=form)
+    return render_template('cargar-pago.html',proveedores=p, chequeras = c, form=form)
 
 @app.route('/_obtener_cheques/<id>')
 def obtener_cheqeus(id):
@@ -31,7 +58,7 @@ def obtener_cheqeus(id):
     cheques = Cheque.query.filter_by(chequera = chequera)
     listaCheques=list(filter(lambda cheque: not cheque.acreditado, cheques))
     numeroCheque = [{'id':c.id , 'numero':c.numero} for c in listaCheques]
-    print (numeroCheque)
+    print (jsonify(numeroCheque))
     print(id)
     return jsonify( numeroCheque)
     # return str([chequera.cheques.count(), chequera.banco, numeroCheque])
@@ -448,8 +475,8 @@ def borrar_compra(id):
 ###########FIN COMPRAS###########
 #################################
 #TODO: Redefinir las peticiones teniendo en cuenta las facturas
-@app.route('/caja')
-def caja():
+@app.route('/administracion')
+def administracion():
     #Productos [ACTIVOS] con cantidad > de 0
     productos = Producto.query.filter(
         Producto.state & ((Producto.cantidad_a>0)|(Producto.cantidad_b>0)|
@@ -519,7 +546,7 @@ def caja():
     
     balance = saldoClientes[2]+acumuladoProductos[2]+caja-saldoProveedores[2]
     return render_template(
-        'caja.html',
+        'administracion.html',
         title='Caja',
         saldoClientes = saldoClientes,
         saldoProveedores = saldoProveedores,
@@ -778,7 +805,7 @@ def cargar_cheque(id):
         db.session.add(cheque)
         db.session.commit()
         flash('Cheque cargado')
-        return redirect(url_for('caja'))
+        return redirect(url_for('administracion'))
     elif request.method =='GET':
         form.importe.data = cobro.monto
     return render_template('formulario-de-carga.html', title='Cargar Cheque', form=form, control=control, id=cobro.id)

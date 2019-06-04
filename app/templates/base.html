@@ -67,7 +67,6 @@
                             
                     </div>
                 </div>
-                
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <div class="buttons">
@@ -75,8 +74,8 @@
                                 <strong>Venta</strong>
                             </a>
                             <a href="{{url_for('listar_compras')}}" class="button"><strong>Compras</strong> </a>
-                            <a class="button is-light" href="{{url_for('caja')}}">
-                                Caja
+                            <a class="button is-light" href="{{url_for('administracion')}}">
+                                Administración
                             </a>
                         </div>
                     </div>
@@ -192,6 +191,9 @@
         }
 
         </script>
+        {% block script %}
+            
+        {% endblock script %}
 
 </body>
 </html>
