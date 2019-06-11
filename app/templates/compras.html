@@ -1,7 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container">
-    <div class="section is-primary"><a href="{{url_for('cargar_compra')}}" class="button is-primary"><strong>Cargar Compra</strong></a></div>
+<div class="section ">
+    <div class="container level">
+        <div class="level-left">
+            <a href="{{url_for('cargar_compra')}}" class="button is-primary level-item"><strong>Cargar Compra</strong></a>
+        </div>
+        <div class="level-left">
+            <div class="field level-item">
+                <label for="fechaInicio" class="label">Inicio</label>
+                <p class="control">
+                    <input type="date" id="fechaInicio" class="input">
+                </p>
+            </div>
+            
+            <div class="field level-item">
+                <label for="fechaFin" class="label">Fin</label>
+                <p class="control">
+                    <input type="date" id="fechaFin" class="input">
+                </p>
+            </div>
+            <div class="level-item">
+                <button class="button is-info" onclick="{{funcion}}">filtrar</button>
+            </div>
+        </div>
+    </div>
     <table class="table container">
         <thead>
             <tr>
@@ -17,7 +39,7 @@
                 <th>Factura</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="cuerpoTabla">
             {% for c in compras %}
             <tr>
                 <td><a href="{{url_for('detalle_compra',id=c.id)}}">{{c.fecha.strftime('%d/%m/%y %H:%M')}}</td>
@@ -55,3 +77,6 @@
 </div>
 
 {% endblock content %}
+{% block script %}
+    <script src="{{url_for('static', filename='js/filtro-fechas.js')}}"></script>
+{% endblock script %}

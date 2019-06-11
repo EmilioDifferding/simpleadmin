@@ -34,11 +34,13 @@
 </form>
 
 {% endblock content %}
+{% block script %}
+    <script src="{{url_for('static', filename='js/cargar-venta.js')}}"></script>
+{% endblock script %}
 
 
 
-
-    <form action="" method="POST" class="columns form">
+   {# <form action="" method="POST" class="columns form">
             {{form.hidden_tag()}}
             <div class="column">
     
@@ -61,4 +63,4 @@
                 
                 <a href="{{atras}}" class="button subtitle is-primary has-text-light" >atras</a>
             </div>
-        </form>
+        </form>#}

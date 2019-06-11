@@ -105,7 +105,10 @@
                         </td>
                         <td>
                         {% if pago.hay_cheque %}
-                            <a href="{{url_for('detalle_cheque', id=pago.cheques[0].id)}}">Cheque</a>
+                        {% for cheque in pago.cheques %}
+                        <a href="{{url_for('detalle_cheque', id=cheque.id)}}">Cheque</a>
+                            
+                        {% endfor %}
                         {% else %}
                             Efectivo
                         {% endif %}
@@ -148,3 +151,6 @@
 
 
 {% endblock content %}
+{% block script %}
+    
+{% endblock script %}

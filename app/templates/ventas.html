@@ -2,18 +2,38 @@
 {% block content %}
 
 <div class="section">
-    <a href="{{url_for('listar_ventas_a',factura='a')}}" class="subtitle button">Ventas A</a>
+    {#<a href="{{url_for('listar_ventas_a',factura='a')}}" class="subtitle button">Ventas A</a>
     <a href="{{url_for('listar_ventas_a',factura='b')}}" class="subtitle button">Ventas B</a>
-    <a href="{{url_for('listar_ventas')}}" class="subtitle button">Todas</a>
+    <a href="{{url_for('listar_ventas')}}" class="subtitle button">Todas</a>#}
+    <div class="container level">
+        <div class="level-left">
+            <div class="field level-item">
+                <label for="fechaInicio" class="label">Inicio</label>
+                <p class="control">
+                    <input type="date" id="fechaInicio" class="input">
+                </p>
+            </div>
+            
+            <div class="field level-item">
+                <label for="fechaFin" class="label">Fin</label>
+                <p class="control">
+                    <input type="date" id="fechaFin" class="input">
+                </p>
+            </div>
+            <div class="field level-item">
+                <button class="button is-info" onclick="{{funcion}}">filtrar</button>
+            </div>
+        </div>
+    </div>
     <table class="table is-hoverable">
         <thead>
             <tr>
                 <th>Fecha-Hora</th>
                 <th>Cliente</th>
                 <th>Producto</th>
+                <th>Cantidad</th>
                 <th class="hidden">$ Compra</th>
                 <th>$ Venta</th>
-                <th>Cantidad</th>
                 <th>$ carga</th>
                 <th>nombre Flete</th>
                 <th>$ flete</th>
@@ -22,15 +42,15 @@
                 <th>Factura</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="cuerpoTabla">
             {% for v in ventas %}
             <tr>
                 <td><a href="{{url_for('detalle_venta',id=v.id)}}">{{v.fecha.strftime('%d/%m/%y %H:%M')}}</td>
                 <td><a href="{{url_for('detalle_cliente', id=v.cliente.id)}} ">{{v.cliente.nombre}}</a></td>
                 <td><a href="{{url_for('detalle_producto',id=v.producto.id)}}">{{v.producto.nombre}}</a></td>
+                <td>{{v.cantidad}}</td>
                 <td class="hidden">${{v.pc_u}}</td>
                 <td>${{v.pv_u}}</td>
-                <td>{{v.cantidad}}</td>
                 <td>${{v.precio_carga}}</td>
                 {% if v.envio.flete %}
                 <td>{{v.envio.flete.nombre}}</td>
@@ -56,3 +76,6 @@
 </div>
 
 {% endblock content %}
+{% block script %}
+    <script src="{{url_for('static', filename='js/filtro-fechas.js')}}"></script>
+{% endblock script %}

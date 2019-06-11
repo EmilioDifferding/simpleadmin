@@ -116,55 +116,7 @@
             }
         </script>
         <script>
-            let valor =0;
-            const prod = document.getElementById('producto');
-            prod.addEventListener('click',getprice);
-            prod.addEventListener('change',getTotal);
-            
-            const cantidad = document.getElementById('cantidad');
-            cantidad.addEventListener('change',getTotal);
-            
-            const precio_unid= document.getElementById('precio_unitario');
-            precio_unid.addEventListener('change',getTotal);
-            
-            const precio_total =document.getElementById('sub_total');
-            precio_total.addEventListener('change',ventaTotal);
-            const flete = document.getElementById('costo_flete');
-            flete.addEventListener('change',ventaTotal);
 
-        function ventaTotal(){
-            let total = document.getElementById('monto');
-            total.value = parseInt(precio_total.value) + parseInt(flete.value);
-        }
-
-        
-        function getTotal(){
-           // setTimeout(function(){
-
-                getprice();
-                let pu = valor;
-                //pu.value = getprice();
-                //document.getElementById('precio_unitario').value;
-                let c = document.getElementById('cantidad').value;
-                console.log('PU = '+pu+'\nC = '+c);
-                precio_total.value = document.getElementById('precio_unitario').value * document.getElementById('cantidad').value;
-                console.log(precio_total.value);
-            }//,600);
-        //}
-
-        function getprice(){
-            let http = new XMLHttpRequest();
-            http.onreadystatechange = function(){
-                if (this.readyState==4 && this.status == 200){
-                    valor =this.responseText;
-                    document.getElementById('precio_unitario').value = valor;
-                    console.log('GETPRICE VALOR='+valor);
-                }
-            };
-            http.open('GET','/precio/'+prod.value,false);
-            console.log('ESTO ES '+prod.value)
-            http.send();
-        }
         
         function openTab(tabName){
             var i;

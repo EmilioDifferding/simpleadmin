@@ -31,7 +31,11 @@
                 <td>{{c.comentario}}</td>
                 <td>$ {{c.monto}}</td>
                 
-                {% if c.hay_cheque%}<td><a href="{{url_for('detalle_cheque', id=c.cheques[0].id)}}">Cheque</a></td>
+                {% if c.hay_cheque%}<td>
+                    {% for cheque in c.cheques %}
+                    <a href="{{url_for('detalle_cheque', id=cheque.id)}}">Cheque</a></td>
+                        
+                    {% endfor %}
                 {% else %}
                 <td>Efectivo</td>
                 {% endif %}

@@ -1,6 +1,7 @@
 from flask import render_template, url_for, redirect,jsonify, flash, request
 from app import app, db
 from app.models import Cliente,Producto,Proveedor,Venta,Compra, Cobro, Cheque, Servicio, Chequera
+from datetime import date, datetime, timedelta
 
 #Formularios
 from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm,ChequedeTercero, CargarChequeraForm
@@ -9,32 +10,6 @@ from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, 
 @app.route('/index')
 def index():
     return render_template('base.html', title='Pagina principal')
-
-
-@app.route('/decodificar',methods=['GET','POST'])
-def decodificar():
-    print(request.is_json)
-    c = request.get_json()
-    if int(c['proveedor']['factura']) < 1:
-        factura = True
-    else:
-        factura = False
-    cobro = Cobro(
-        # forma_pago = c['forma_pago'],
-        monto =int(c['proveedor']['monto']),
-        comentario=c['proveedor']['comentario'],
-        proveedor = Proveedor.query.filter_by(id=c['proveedor']['id']).first(),
-        entrada = False,
-        factura = factura,
-    )
-    db.session.add(cobro)
-    db.session.commit()
-    print (cobro)
-    print(cobro.proveedor.nombre)
-    print(c['proveedor']['forma_pago'])
-    print(c)
-    return str(c)
-
 
 @app.route('/precio/<id>')
 def precio(id):
@@ -47,21 +22,35 @@ def c ():
     form = CargarChequeForm()
     chequeras = Chequera.query.filter_by(state = True).all()
     p = Proveedor.query.filter_by(state=True).all()
-    lista = list(filter(lambda chequera: not chequera.state, chequeras))
+    lista = list(filter(lambda chequera: chequera.state, chequeras))
     listaChequera = [{'id': c.id, 'numero':c.numero_chequera, 'banco':c.banco} for c in lista]
     c = chequeras
     return render_template('cargar-pago.html',proveedores=p, chequeras = c, form=form)
 
-@app.route('/_obtener_cheques/<id>')
+@app.route('/_obtener_cheques/<id>', methods=['GET'])
 def obtener_cheqeus(id):
     chequera = Chequera.query.filter_by(id = id).first()
     cheques = Cheque.query.filter_by(chequera = chequera)
-    listaCheques=list(filter(lambda cheque: not cheque.acreditado, cheques))
+    print(list(cheques))
+    listaCheques=list(filter(lambda cheque: (cheque.acreditado==False)&(cheque.emitido ==False), cheques))
     numeroCheque = [{'id':c.id , 'numero':c.numero} for c in listaCheques]
     print (jsonify(numeroCheque))
     print(id)
     return jsonify( numeroCheque)
     # return str([chequera.cheques.count(), chequera.banco, numeroCheque])
+
+@app.route('/_obtener_cheques/tercero/')
+def chequeTercero():
+    cheques = Cheque.query.filter_by(state=True).filter_by(acreditado=False).filter_by(es_de_tercero = True).filter_by(emitido=False).all()
+    print('chequesTercerosFiltrados',cheques)
+    lista = [{'id':c.id, 'numero':c.numero, 'monto':c.importe} for c in cheques]
+    print(jsonify(lista))
+    return jsonify(lista)
+
+@app.route('/_obtener_cheques/tercero/<id>')
+def getValue (id):
+    cheque = Cheque.query.filter_by(id=id).first()
+    return str(cheque.importe)
 
 @app.route('/cargar-producto', methods=['GET','POST'])
 def cargar_producto():
@@ -341,7 +330,13 @@ def cargar_venta():
         )
         venta.actualizar_saldo_cliente(suma=True)
         db.session.commit()
+        flash ('Venta Realizada con éxito.')
         return redirect(url_for('listar_ventas'))
+    elif request.method == 'GET':
+        form.cantidad.data = 0
+        form.sub_total.data = 0
+        form.costo_flete.data = 0
+        form.monto_total.data = 0
     return render_template(
         'formulario-de-carga.html',
         form = form,
@@ -352,7 +347,59 @@ def cargar_venta():
 @app.route('/ventas/')
 def listar_ventas():
     ventas = Venta.query.filter_by(state=True).order_by(Venta.fecha.desc()).all()
-    return render_template('ventas.html', ventas=ventas, title="registro de ventas (TODAS)")
+    funcion='filtrarVentas()'
+    return render_template('ventas.html', ventas=ventas, title="registro de ventas (TODAS)", funcion=funcion)
+
+@app.route('/filtrar-ventas', methods=['POST'])
+def filtrar_ventas():
+    formato = "%Y-%m-%d"
+    if request.method == 'POST':
+        r = request.get_json()
+        inicio = datetime.strptime(r['inicio']['inicio'],formato)
+        fin = datetime.strptime(r['fin']['fin'],formato)
+        if(fin<inicio):
+            return 'corroborar fecha'
+
+        ventas = Venta.query.filter_by(state=True).order_by(Venta.id.desc()).all()
+        ventasFiltradas = [v for v in ventas if v.fecha > inicio and v.fecha < fin+timedelta(days=1)]
+        lista = []
+
+        keys = [
+            'id', 'fecha',
+            'cliente','cliente_id',
+            'producto', 'producto_id',
+            'cantidad', 'precioCompra',
+            'precioVenta', 'precioCarga',
+            'precioFlete', 'flete', 'flete_id',
+            'total', 'utilidad','factura_cliente',
+            ]
+        for venta in ventasFiltradas:
+            d = dict.fromkeys(keys,0)
+            d['id'] = venta.id
+            d['fecha'] = datetime.strftime(venta.fecha, format='%d/%m/%y - %H:%M')
+            d['cliente'] = venta.cliente.nombre
+            d['cliente_id'] = venta.cliente.id
+            d['producto'] = venta.producto.nombre
+            d['producto_id'] = venta.producto.id
+            d['cantidad'] = venta.cantidad
+            d['precioCompra'] = venta.pc_u
+            d['precioVenta'] = venta.pv_u
+            d['precioCarga'] = venta.precio_carga
+            d['precioFlete'] = venta.costo_flete
+            d['total'] = venta.monto_total
+            d['factura_cliente'] = venta.factura_cliente
+            d['utilidad'] = venta.utilidad
+            if venta.envio is not None:
+                d['flete'] = venta.envio.flete.nombre
+                d['flete_id'] = venta.envio.flete.id
+            else:
+                d['flete'] = 'Sin Envio'
+                # d['flete_id'] = 'null'
+            lista.append(d)
+
+        print ('LA LISTA',lista)
+
+        return jsonify(lista)
 
 @app.route('/ventas/<string:factura>')
 def listar_ventas_a(factura):
@@ -365,6 +412,8 @@ def listar_ventas_a(factura):
     else: return listar_ventas()
 
 ###DETALLE DE VENTA###
+
+
 @app.route('/venta/<id>')
 def detalle_venta(id):
     venta = Venta.query.filter_by(id=id).first()
@@ -419,13 +468,13 @@ def cargar_compra():
         compra.get_unit_price()
         db.session.add(compra)
 
+        # def hay_servicio():
         if form.flete.data != 0:
             flete = Proveedor.query.filter_by(id=form.flete.data).first()
             servicio = Servicio(flete=flete, compra=compra)
             compra.actualizar_saldo_flete(suma=True)
-            
-        else:
-            pass
+            db.session.add(servicio)
+
 
         compra.actualizar_saldo_proveedor(suma=True)
         
@@ -436,8 +485,8 @@ def cargar_compra():
         )
         
         # compra.actualizar_saldo_flete(suma=True)
-        
-        db.session.add(servicio)
+        # if hay_servicio():
+        #     db.session.add(hay_servicio()[1])
         db.session.commit()
         compra.producto.calcular_precio_unitario()
         flash('Compra cargada con Exito!')
@@ -447,8 +496,59 @@ def cargar_compra():
 
 @app.route('/compras')
 def listar_compras():
-    compras = Compra.query.filter_by(state=True).order_by(Compra.fecha.desc()).all()
-    return render_template('compras.html',compras=compras,title='Registro de Compras')
+    compras = Compra.query.filter_by(state=True).order_by(Compra.id.desc()).all()
+    funcion='filtrarCompras()'
+    return render_template('compras.html',compras=compras,title='Registro de Compras', funcion=funcion)
+
+@app.route('/filtrar-compras', methods=['GET','POST'])
+def filtrar_compras():
+    formato = "%Y-%m-%d"
+    if request.method == 'POST':
+        r = request.get_json()
+        inicio = datetime.strptime(r['inicio']['inicio'],formato)
+        fin = datetime.strptime(r['fin']['fin'],formato)
+        if(fin<inicio):
+            return 'corroborar fecha'
+
+        compras = Compra.query.filter_by(state=True).order_by(Compra.fecha.desc()).all()
+        comprasFiltradas = [c for c in compras if c.fecha > inicio and c.fecha< fin+timedelta(days=1)]
+        lista = []
+
+        keys = [
+            'id',
+            'proveedor', 'fecha',
+            'producto', 'valor_unitario',
+            'p_carga', 'p_flete',
+            'factura_prov', 'flete',
+            'cantidad', 'total',
+            'proveedor_id', 'flete_id',
+            'producto_id'
+            ]
+        for compra in comprasFiltradas:
+            d = dict.fromkeys(keys,0)
+            d['id'] = compra.id
+            d['fecha'] = compra.fecha
+            d['proveedor'] = compra.proveedor.nombre
+            d['producto'] = compra.producto.nombre
+            d['cantidad'] = compra.cantidad
+            d['valor_unitario'] = compra.precio_unitario
+            d['p_carga'] = compra.precio_carga
+            d['p_flete'] = compra.precio_flete
+            d['total'] = compra.monto_total
+            d['factura_prov'] = compra.factura_proveedor
+            d['proveedor_id'] = compra.proveedor.id
+            d['producto_id'] = compra.producto.id
+            if compra.envio is not None:
+                d['flete'] = compra.envio.flete.nombre
+                d['flete_id'] = compra.envio.flete.id
+            else:
+                d['flete'] = 'Sin Envio'
+                # d['flete_id'] = 'null'
+            lista.append(d)
+
+        print ('LA LISTA',lista)
+
+        return jsonify(lista)
 
 @app.route('/compras/historial/bajas')
 # TODO: Hacer una plantilla para visualizar y restituir las compras y ventas inactivas
@@ -743,11 +843,152 @@ def cobrar():
             return redirect(url_for('listar_cobros'))
     return render_template('formulario-de-carga.html', title='Cargar cobro de un cliente', form=form)
 
-@app.route('/pagar', methods=['GET','POST'])
-def pagar():
-    form = CobranzaForm()
-    form.cliente.choices = [(c.id, c.nombre)for c in Proveedor.query.filter_by(state=True).order_by('nombre').all()]
 
+@app.route('/decodificar',methods=['GET','POST'])
+def decodificar():
+    print(request.is_json)
+    c = request.get_json()
+    if int(c['proveedor']['factura']) < 1:
+        factura = True
+    else:
+        factura = False
+    cobro = Cobro(
+        # forma_pago = c['forma_pago'],
+        monto =int(c['proveedor']['monto']),
+        comentario=c['proveedor']['comentario'],
+        proveedor = Proveedor.query.filter_by(id=c['proveedor']['id']).first(),
+        entrada = False,
+        factura = factura,
+        fecha = datetime.strptime(c['proveedor']['fecha'],"%Y-%m-%d"),
+    )
+    db.session.add(cobro)
+    db.session.commit()
+    print (cobro)
+    print(cobro.proveedor.nombre)
+    print(c['proveedor']['forma_pago'])
+    print(c)
+    return str(c)
+
+@app.route('/pagar', methods=['GET', 'POST'])
+def pagar():
+    chequeras = Chequera.query.filter_by(state=True).all()
+    p = Proveedor.query.filter_by(state=True).all()
+    chequesTerceros = Cheque.query.filter_by(state=True).filter_by(es_de_tercero =True).filter_by(acreditado= False).filter_by(emitido= False).all()
+    print('chequesTercerosFiltrados',chequesTerceros)
+    
+    if request.method == 'POST':
+        req = request.get_json()
+        proveedor = Proveedor.query.filter_by(id=req['proveedor']['id']).first()
+        # proveedor = Proveedor.query.filter_by(id=c['proveedor']['id']).first()
+        if int(req['proveedor']['factura']) < 1:
+            factura = True
+        else:
+            factura = False
+        if req['proveedor']['forma_pago'] == 'chequera':
+            hay_cheque = True
+        elif req['proveedor']['forma_pago']=='cheque3ro':
+            for id in req['cheq']['ids']:
+                print(id)
+            hay_cheque = True
+        else:
+            hay_cheque = False
+
+        
+        pago = Cobro(
+            monto = round(float(req['proveedor']['monto']),2),
+            comentario = req['proveedor']['comentario'],
+            proveedor = proveedor,
+            nombre = proveedor.nombre,
+            entrada = False,
+            factura = factura,
+            fecha = datetime.utcnow(),
+            state = True,
+            hay_cheque = hay_cheque,
+            )
+        db.session.add(pago)
+        pago.restar_saldo()
+        #db.session.commit()
+        if hay_cheque:
+            if req['proveedor']['forma_pago'] == 'chequera':
+                cheque = Cheque.query.filter_by(id=req['cheq']['id']).first()
+                cheque.fecha = datetime.utcnow()
+                cheque.fecha_emision = datetime.strptime(req['cheq']['fecha_emision'], "%Y-%m-%d")
+                cheque.fecha_cobro = datetime.strptime(req['cheq']['fecha_cobro'], "%Y-%m-%d")
+                cheque.cobro = pago
+                cheque.importe = round(float(req['proveedor']['monto']),2)
+                cheque.comentario = req['proveedor']['comentario']
+                cheque.emitido = True
+                cheque.es_entrada = False
+                cheque.es_de_tercero = False
+                cheque.acreditado = False
+                db.session.commit()
+                return 'El Pago se realizo con éxito'
+            elif req['proveedor']['forma_pago']=='cheque3ro':
+                chequesTerceros = []
+                for id in req['cheq']['ids']:
+                    c = Cheque.query.filter_by(id=id).first()
+                    c.es_entrada =False
+                    c.emitido = True
+                    pago.cheques.append(c)
+                    db.session.commit()
+                    print('emitidoooo',pago.cheques)
+                    return 'Cheques cargados'
+        else:
+            db.session.commit()
+            return 'Pago Cargado'
+    
+    else:
+        return render_template('cargar-pago.html', proveedores=p, chequeras=chequeras, title='Cargar pago a proveedor')
+# @app.route('/pagar', methods=['GET','POST'])
+# def pagar():
+#     # form = CobranzaForm()
+#     # form.cliente.choices = [(c.id, c.nombre)for c in Proveedor.query.filter_by(state=True).order_by('nombre').all()]
+#     if request.method == 'POST':
+#         print(request.is_json)
+#         c = request.get_json()
+#         proveedor = Proveedor.query.filter_by(id=c['proveedor']['id']).first()
+#         if int(c['proveedor']['factura']) < 1:
+#             factura = True
+#         else:
+#             factura = False
+#         if c['proveedor']['forma_pago'] != 'efectivo':
+#             hay_cheque = True
+#         else: hay_cheque = False
+#         cobro = Cobro(
+#             # forma_pago = c['forma_pago'],
+#             monto =round(float(c['proveedor']['monto']),2),
+#             comentario=c['proveedor']['comentario'],
+#             proveedor = proveedor,
+#             nombre = proveedor.nombre,
+#             entrada = False,
+#             factura = factura,
+#             fecha = datetime.utcnow(),
+#             state = True,
+#             hay_cheque = hay_cheque,
+#             )
+#         db.session.add(cobro)
+#         cobro.restar_saldo()
+#         db.session.commit()
+#         print (cobro)
+#         print(cobro.proveedor.nombre)
+#         print(c['proveedor']['forma_pago'])
+#         valor = c['proveedor']['monto']
+#         print(valor)
+#         return str(c)
+
+#     form = CargarChequeForm()
+#     chequeras = Chequera.query.filter_by(state = True).all()
+#     p = Proveedor.query.filter_by(state=True).all()
+#     lista = list(filter(lambda chequera: not chequera.state, chequeras))
+#     listaChequera = [{'id': c.id, 'numero':c.numero_chequera, 'banco':c.banco} for c in lista]
+#     c = chequeras
+#     return render_template('cargar-pago.html',proveedores=p, chequeras = c, form=form, title='Cargar un pago de cliente')
+    
+
+
+
+# BACKUP FORMA ANTIGUA
+"""      strptime(c['proveedor']['fecha'],"%Y-%m-%d")
     if form.validate_on_submit():
         proveedor = Proveedor.query.filter_by(id=form.cliente.data).first()
 
@@ -776,8 +1017,7 @@ def pagar():
             return redirect(url_for('cargar_cheque', id=cobro.id))
         else:
             flash('Pago cargado con exito!.')
-            return redirect(url_for('listar_pagos'))
-    return render_template('formulario-de-carga.html', title='Cargar un pago de cliente', form=form)
+            return redirect(url_for('listar_pagos')) """
 
 @app.route('/cargar-cheque/<id>', methods=['GET','POST'])
 def cargar_cheque(id):

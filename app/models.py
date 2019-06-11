@@ -26,7 +26,7 @@ venta_envio = db.Table(
  """
 class Servicio(db.Model):
     id = db.Column(db.Integer, primary_key=True, index=True)
-    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), index=True)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), index = True)
     compra_id = db.Column(db.Integer, db.ForeignKey('compra.id'), index=True)
     venta_id = db.Column(db.Integer, db.ForeignKey('venta.id'), index=True)
 
@@ -207,6 +207,7 @@ class Cheque(db.Model):
     id = db.Column(db.Integer, unique=True, index=True, primary_key=True)
     cobro_id = db.Column(db.Integer, db.ForeignKey('cobro.id'), index=True)
     chequera_id = db.Column(db.Integer, db.ForeignKey('chequera.id'))
+    emisor = db.Column(db.String(32))
     fecha = db.Column(db.DateTime())
     fecha_emision = db.Column(db.DateTime)
     fecha_cobro = db.Column(db.DateTime)
@@ -423,7 +424,7 @@ class Producto(db.Model):
             print('EL OFFSET ES CERO')
             for i in range(len(self.compras)):
                 parcial += self.compras[i].precio_unitario
-            self.precio_compra = round(parcial/(len(self.compras) - self.offset),2)
+            self.precio_compra = round(parcial/(len(self.compras)+1 - self.offset),2)
         db.session.commit()
     
     def actualizar_stock(self, cantidad, factura, entrada):
