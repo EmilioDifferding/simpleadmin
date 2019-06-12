@@ -159,7 +159,7 @@ class EditarProductoForm(FlaskForm):
                 raise ValidationError('Este Producto ya existe en la base de datos.')
 
 class CargarVentaForm(FlaskForm):
-    fecha = DateField(format='%d/%m/%y - %H:%M',validators=[Optional()])
+    fecha = DateField(format='%d/%m/%y - %H:%M',default=datetime.utcnow(),validators=[Optional()])
     clientes = SelectField('Seleccione cliente', coerce=int)
     producto = SelectField('Seleccione el producto', coerce=int)
     cantidad = FloatField('Cantidad')
@@ -171,11 +171,11 @@ class CargarVentaForm(FlaskForm):
     comentario=TextAreaField('Comentario')
     factura_cliente = BooleanField('Facturar cliente', default=False)
     factura_flete = BooleanField('Facturar flete', default=False)
-    pagado = BooleanField('Pagado?',default=False)
+    # pagado = BooleanField('Pagado?',default=False)
     submit = SubmitField('Aceptar')
 
 class CargarCompraForm(FlaskForm):
-    fecha = DateField(format='%d/%m/%y - %H:%M',validators=[Optional()])
+    fecha = DateField(format='%d/%m/%y - %H:%M',default=datetime.utcnow() ,validators=[Optional()])
     proveedor = SelectField('Seleccione proveedor', coerce=int)
     producto = SelectField('Seleccione el producto', coerce=int)
     cantidad = FloatField('Cantidad')
@@ -187,7 +187,7 @@ class CargarCompraForm(FlaskForm):
     comentario = TextAreaField('Comentarios')
     factura_proveedor = BooleanField('Factura Proveedor', default=False)
     factura_flete = BooleanField('Factura Flete', default=False)
-    pagado = BooleanField('Pagado?')
+    # pagado = BooleanField('Pagado?')
     submit = SubmitField('Aceptar')
 
 class CobranzaForm(FlaskForm):

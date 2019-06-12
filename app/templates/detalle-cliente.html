@@ -76,7 +76,12 @@ Saldo B: ${{cliente.saldo_b}}</h1>
                     {% if c.state %}
                         <tr>
                             <td>{{c.fecha.strftime('%d/%m/%y - %H:%M')}}</td>
-                            {% if c.forma_pago =='Cheque' %}<td><a href="{{url_for('detalle_cheque', id=c.cheques[0].id)}}">Cheque</a></td>
+                            {% if c.hay_cheque %}<td>
+                                {% for cheque in c.cheques %}
+                                <a href="{{url_for('detalle_cheque', id=cheque.id)}}">Cheque</a></td>
+                                {%else%}
+                                Cheque (utilizado en pago)
+                                {% endfor %}
                             {% else %}
                             <td>Efectivo</td>
                             {% endif %}

@@ -1,7 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>Cheques</h1>
-    <table class="table">
+<div class="section">
+        <div class="tabs is-medium is-toggle is-centered">
+            <ul>
+                <li id="v" class="btn "><a onclick="openTab('ventas')">Todos</a></li>
+                <li id="c" class="btn"><a onclick="openTab('cobros')">Salida</a></li>
+                <li id="s" class="btn"><a onclick="openTab('servicios')">Entrada</a></li>
+            </ul>
+        </div>
+        <table class="table is-hoverable" id="ventas">
         <thead>
             <tr>
                 <th>Cheque id</th>
@@ -26,8 +33,8 @@
             {% endfor %}
         </tbody>
     </table>
-    <h1>Cheques salida</h1>
-    <table class="table">
+
+    <table class="table is-hoverable" id="cobros" style="display: none;">
             <thead>
                 <tr>
                     <th>Cheque id</th>
@@ -51,8 +58,8 @@
                 {% endfor %}
             </tbody>
         </table>
-        <h1>Cheques entrada</h1>
-        <table class="table">
+
+        <table class="table is-heverable" id="servicios" style="display:none;">
                 <thead>
                     <tr>
                         <th>Cheque id</th>

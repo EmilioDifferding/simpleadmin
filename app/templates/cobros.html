@@ -18,7 +18,7 @@
                 <th>id</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="cuerpoTabla">
             {% for c in cobros %}
                 <tr>
                 <th>{{c.fecha.strftime('%d/%m/%y - %H:%M')}}</th>
@@ -32,10 +32,13 @@
                 <td>$ {{c.monto}}</td>
                 
                 {% if c.hay_cheque%}<td>
-                    {% for cheque in c.cheques %}
-                    <a href="{{url_for('detalle_cheque', id=cheque.id)}}">Cheque</a></td>
-                        
-                    {% endfor %}
+                    {% if c.cheques.count() > 0 %}
+                        {% for cheque in c.cheques %}
+                        <a href="{{url_for('detalle_cheque', id=cheque.id)}}">Cheque</a></td>    
+                        {% endfor %}
+                    {% else %}
+                        Cheque(utilizado)
+                    {% endif %}
                 {% else %}
                 <td>Efectivo</td>
                 {% endif %}
@@ -45,4 +48,5 @@
                 {% endfor %}
         </tbody>
     </table>
+
 {% endblock content %}

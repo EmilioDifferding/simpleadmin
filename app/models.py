@@ -23,7 +23,9 @@ venta_envio = db.Table(
     db.Column('porveedor_id', db.Integer, db.ForeignKey('proveedor.id')),
     db.Column('venta_id', db.Integer, db.ForeignKey('venta.id')),
 )
- """
+"""
+
+
 class Servicio(db.Model):
     id = db.Column(db.Integer, primary_key=True, index=True)
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), index = True)
@@ -50,6 +52,7 @@ class Cliente(db.Model):
     saldo_a = db.Column(db.Float, default= 0.00)
     saldo_b = db.Column(db.Float, default=0.00)
     cobros = db.relationship('Cobro', backref='cliente', lazy='dynamic')
+    cheques_emitidos = db.relationship('Cheque', backref='cliente', lazy='dynamic')
 
 
     def borrar(self):
@@ -221,6 +224,8 @@ class Cheque(db.Model):
     acreditado = db.Column(db.Boolean, default=False)
     es_entrada = db.Column(db.Boolean, default=False)
     emitido = db.Column(db.Boolean, default=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'))
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'))
     # TODO: Metodo de acreditado de cheque
     def acreditar (self):
         self.acreditado = True
@@ -283,6 +288,7 @@ class Proveedor(db.Model):
     compras = db.relationship('Compra', backref='proveedor', lazy='dynamic')
     state = db.Column(db.Boolean, default=True)
     envios = db.relationship('Servicio', backref='flete', lazy='dynamic')
+    cheques_entregados = db.relationship('Cheque',backref='proveedor', lazy='dynamic')
     
     def actualizar_saldo(self, monto, factura, suma):
         """monto: para que reste del saldo tiene que ser <0

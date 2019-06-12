@@ -312,7 +312,7 @@ def cargar_venta():
             costo_flete = form.costo_flete.data,
             monto_total =form.monto_total.data,
             comentario = form.comentario.data,
-            pagado = form.pagado.data,
+            
             factura_cliente = form.factura_cliente.data,
             factura_flete = form.factura_flete.data
             )
@@ -452,7 +452,7 @@ def cargar_compra():
         precio_carga = round(form.precio_carga.data,2)
         monto_total = round(form.monto_total.data,2)
         comentario = form.comentario.data
-        pagado = form.pagado.data
+        # pagado = form.pagado.data
         compra = Compra(
             proveedor = Proveedor.query.filter_by(id=form.proveedor.data).first(),
             producto = Producto.query.filter_by(id=form.producto.data).first(),
@@ -460,7 +460,7 @@ def cargar_compra():
             cantidad = form.cantidad.data,
             precio_flete = precio_flete,
             precio_carga = precio_carga,
-            pagado = pagado,
+            
             monto_total = monto_total,
             factura_proveedor = form.factura_proveedor.data,
             factura_flete = form.factura_flete.data,
@@ -616,7 +616,26 @@ def administracion():
     cobranzas_b = getMonto(entradas_b)
     pagos_a = getMonto(salidas_a)
     pagos_b = getMonto(salidas_b)
-    caja = cobranzas_a+cobranzas_b-pagos_a-pagos_b
+
+    chequesInAcr = Cheque.query.filter_by(state=True).filter_by(acreditado=True).filter_by(es_entrada=True).all()
+    cobrosEfectivo = Cobro.query.filter_by(state=True).filter_by(entrada=True).filter_by(forma_pago='efectivo').all()
+    chequesOutAcred = Cheque.query.filter_by(state=True).filter_by(acreditado=True).filter_by(es_entrada=False).all()
+    pagosEfectivo = Cobro.query.filter_by(state=True).filter_by(entrada=False).filter_by(forma_pago='efectivo').all()
+    cOutAcred = 0.0
+    cInAcred = 0.0
+    inEfectivo = 0.0
+    outEfectivo = 0.0
+    for cheques in chequesInAcr:
+        cInAcred += cheques.importe
+    for cobro in cobrosEfectivo:
+        inEfectivo += cobro.monto
+    for cheques in chequesOutAcred:
+        cOutAcred += cheques.importe
+    for pago in pagosEfectivo:
+        outEfectivo += pago.monto
+
+    caja = cobranzas_a + cobranzas_b - pagos_a - pagos_b
+    caja2 = inEfectivo + cInAcred - cOutAcred -outEfectivo
     def getAcumuladoProductos(lista):
         acum_a = 0.0
         acum_b = 0.0
@@ -643,8 +662,11 @@ def administracion():
     chequesDeTerceros = Cheque.query.filter(Cheque.state & Cheque.es_de_tercero & (not Cheque.acreditado)).all()
 
     chequesPropios = Cheque.query.filter(Cheque.state & (not Cheque.es_de_tercero) &(not Cheque.acreditado)).all()
+    totalCheques = 0.0
+    for c in chequesPropios:
+        totalCheques += c.importe
     
-    balance = saldoClientes[2]+acumuladoProductos[2]+caja-saldoProveedores[2]
+    balance = saldoClientes[2]+acumuladoProductos[2]+caja-saldoProveedores[2]-totalCheques
     return render_template(
         'administracion.html',
         title='Caja',
@@ -656,7 +678,8 @@ def administracion():
         cobranzas_b = cobranzas_b,
         acum = acumuladoProductos,
         balance=balance,
-        caja=caja
+        caja=caja,
+        caja2 = caja2
     )
 
 
@@ -815,6 +838,10 @@ def cobrar():
     
     if form.validate_on_submit():
         cliente = Cliente.query.filter_by(id=form.cliente.data).first()
+        if form.hay_cheque.data:
+            forma_pago = 'cheque'
+        else:
+            forma_pago = 'efectivo'
         if form.factura.data < 1:
             factura = True
         else:
@@ -830,6 +857,7 @@ def cobrar():
             hay_cheque = form.hay_cheque.data,
             entrada = True,
             state = True,
+            forma_pago=forma_pago
         )
         db.session.add(cobro)
         cobro.restar_saldo()
@@ -886,12 +914,15 @@ def pagar():
             factura = False
         if req['proveedor']['forma_pago'] == 'chequera':
             hay_cheque = True
+            forma_pago = 'cheque'
         elif req['proveedor']['forma_pago']=='cheque3ro':
-            for id in req['cheq']['ids']:
+            for id in req['cheq']['cids']:
                 print(id)
             hay_cheque = True
+            forma_pago = 'cheque'
         else:
             hay_cheque = False
+            forma_pago = 'efectivo'
 
         
         pago = Cobro(
@@ -904,6 +935,7 @@ def pagar():
             fecha = datetime.utcnow(),
             state = True,
             hay_cheque = hay_cheque,
+            forma_pago = forma_pago,
             )
         db.session.add(pago)
         pago.restar_saldo()
@@ -921,18 +953,20 @@ def pagar():
                 cheque.es_entrada = False
                 cheque.es_de_tercero = False
                 cheque.acreditado = False
+                cheque.proveedor = proveedor
                 db.session.commit()
                 return 'El Pago se realizo con éxito'
             elif req['proveedor']['forma_pago']=='cheque3ro':
                 chequesTerceros = []
-                for id in req['cheq']['ids']:
+                for id in req['cheq']['cids']:
                     c = Cheque.query.filter_by(id=id).first()
                     c.es_entrada =False
                     c.emitido = True
                     pago.cheques.append(c)
-                    db.session.commit()
-                    print('emitidoooo',pago.cheques)
-                    return 'Cheques cargados'
+                    c.proveedor = proveedor
+                    print('emitidoooo')
+                db.session.commit()
+                return 'Cheques cargados'
         else:
             db.session.commit()
             return 'Pago Cargado'
@@ -1040,7 +1074,8 @@ def cargar_cheque(id):
             cobro=cobro,
             es_de_tercero = es_de_tercero,
             es_entrada = cobro.entrada,
-            factura = cobro.factura
+            factura = cobro.factura,
+            cliente = cobro.cliente
             )
         db.session.add(cheque)
         db.session.commit()
@@ -1077,6 +1112,57 @@ def cheque_tercero(id):
     form.cheques.choices = [(c.id, c.importe)for c in Cheque.query.filter_by(state=True).filter_by(es_de_tercero=True).order_by('importe').all()]
     return render_template('formulario-de-carga.html',form=form)
 
+@app.route('/filtrar-cobros', methods=['POST'])
+#TODO: COMPLETAR Y REALIZAR EL ENVIO QUE FALTA A FILTRO-FECHAS.js
+def filtrar_cobros():
+    formato = "%Y-%m-%d"
+    if request.method == 'POST':
+        r = request.get_json()
+        inicio = datetime.strptime(r['inicio']['inicio'],formato)
+        fin = datetime.strptime(r['fin']['fin'],formato)
+        if(fin<inicio):
+            return 'la fecha de inicio debe ser menor a la de fin.'
+
+        cobros = Cobro.query.filter_by(state=True).order_by(Venta.id.desc()).filter_by(entrada=True).all()
+        cobrosFiltrados = [c for c in cobros if c.fecha > inicio and c.fecha < fin+timedelta(days=1)]
+        lista = []
+
+        keys = [
+            'id', 'fecha',
+            'cliente','cliente_id',
+            'comentario', 'monto',
+            'forma_pago', 'factura',
+            'cheques'
+            ]
+            
+        for venta in ventasFiltradas:
+            d = dict.fromkeys(keys,0)
+            d['id'] = venta.id
+            d['fecha'] = datetime.strftime(venta.fecha, format='%d/%m/%y - %H:%M')
+            d['cliente'] = venta.cliente.nombre
+            d['cliente_id'] = venta.cliente.id
+            d['producto'] = venta.producto.nombre
+            d['producto_id'] = venta.producto.id
+            d['cantidad'] = venta.cantidad
+            d['precioCompra'] = venta.pc_u
+            d['precioVenta'] = venta.pv_u
+            d['precioCarga'] = venta.precio_carga
+            d['precioFlete'] = venta.costo_flete
+            d['total'] = venta.monto_total
+            d['factura_cliente'] = venta.factura_cliente
+            d['utilidad'] = venta.utilidad
+            if venta.envio is not None:
+                d['flete'] = venta.envio.flete.nombre
+                d['flete_id'] = venta.envio.flete.id
+            else:
+                d['flete'] = 'Sin Envio'
+                # d['flete_id'] = 'null'
+            lista.append(d)
+
+        print ('LA LISTA',lista)
+
+        return jsonify(lista)
+    pass
 @app.route('/registro-de-cobros')
 def listar_cobros():
     cobros = Cobro.query.filter_by(entrada=True).order_by(Cobro.fecha.desc()).all()
@@ -1090,13 +1176,13 @@ def listar_pagos():
 @app.route('/registro-de-cheques')
 def listar_cheques():
     cheques = Cheque.query.filter_by(state=True).all()
-
-    cheques_in = filter(lambda cheque: cheque.es_entrada, cheques)
-    cheques_out = filter(lambda cheque: not(cheque.es_entrada), cheques)
+    cheques_all = Cheque.query.filter_by(state=True).filter_by(emitido=True).all()
+    cheques_in = filter(lambda cheque: cheque.es_entrada and(cheque.cliente!=None), cheques)
+    cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None), cheques)
 
     return render_template(
         'lista-cheques.html',
-        cheques=cheques,
+        cheques=cheques_all,
         cheques_in=cheques_in,
         cheques_out=cheques_out,
         title = 'lista de cheques')
@@ -1105,6 +1191,7 @@ def listar_cheques():
 def acreditar_cheque(id):
     cheque = Cheque.query.filter_by(id=id).first()
     cheque.acreditado = True
+    cheque.state= False
     db.session.commit()
     return redirect(url_for('listar_cheques'))
 

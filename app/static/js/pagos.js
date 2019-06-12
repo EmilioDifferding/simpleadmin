@@ -97,7 +97,7 @@ function gjson(e){
         
         
         cheq ={
-            ids :idArr
+            cids :idArr
         }
     }
     console.log(JSON.stringify({proveedor,cheq }))

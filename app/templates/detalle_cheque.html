@@ -9,7 +9,9 @@
         <a href="{{url_for('detalle_cliente',id=c.cobro.cliente.id)}}"> {{c.cobro.cliente.nombre}}</a>  para propietario
         {%else%}
         Propietario para: 
-        <a href="{{url_for('detalle_proveedor', id= c.cobro.proveedor.id)}}">{{c.cobro.proveedor.nombre}}</a>
+        <a href="{{url_for('detalle_proveedor', id= c.cobro.proveedor.id)}}">{{c.cobro.proveedor.nombre}}</a> {% if c.cliente %}
+            - Emisor: <a href="{{url_for('detalle_cliente',id=c.cliente.id)}}">{{c.cliente.nombre}}</a>
+        {% endif %}
         {%endif%}
         
     </p>
@@ -21,7 +23,7 @@
     <p><strong>Monto:</strong> $ {{c.importe}}</p>
     <p><strong>Comentarios:</strong> {{c.comentario}}</p>
     
-    <p class="button subtitle is-primary"><a href="{{url_for('detalle_cliente', id=c.cliente_id)}}" class="has-text-white">Editar</a></p>
+    {#<p class="button subtitle is-primary"><a href="{{url_for('detalle_cheque', id=c.id)}}" class="has-text-white">Editar</a></p>#}
 </div>
 
 {% endblock content %}
