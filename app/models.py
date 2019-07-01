@@ -122,7 +122,7 @@ class Venta(db.Model):
         self.utilidad =round( (self.monto_total-((self.pc_u*self.cantidad)+self.costo_flete)),2)
 
     def actualizar_saldo_cliente(self, suma):
-        """al ejecutar la venta, se le impyta el saldo al cliente y si hay un flete elegido, precio_flete se inputa también como saldo al proveedor del flete"""
+        """al ejecutar la venta, se le imputa el saldo al cliente y si hay un flete elegido, precio_flete se inputa también como saldo al proveedor del flete"""
 
         self.cliente.actualizar_saldo(
             monto = self.monto_total,
@@ -211,6 +211,7 @@ class Cheque(db.Model):
     cobro_id = db.Column(db.Integer, db.ForeignKey('cobro.id'), index=True)
     chequera_id = db.Column(db.Integer, db.ForeignKey('chequera.id'))
     emisor = db.Column(db.String(32))
+    destino = db.Column(db.String(32))
     fecha = db.Column(db.DateTime())
     fecha_emision = db.Column(db.DateTime)
     fecha_cobro = db.Column(db.DateTime)
@@ -231,8 +232,33 @@ class Cheque(db.Model):
         self.acreditado = True
     
     def emitir(self):
-        if self.es_de_tercero & (not self.emitido):
-            self.emitir = True
+        if not self.emitido:
+            self.emitido = True
+    
+    def get_emisor(self):
+        if self.es_de_tercero:
+            emitter = Cliente.query.filter_by(id=self.cliente.id).first()
+            if emitter is not None:
+                self.emisor = emitter.nombre
+        else:
+            self.emisor = 'Propietario'
+        db.session.commit()
+    
+    def get_destino(self):
+        '''Se utilida para pagos, establece el destinatario del cheque emitido'''
+        if self.emitido:
+            destino = Proveedor.query.filter_by(id=self.proveedor.id).first()
+            if destino is not None:
+                self.destino = destino.nombre
+        else:
+            self.destino = 'Propietario'
+    
+    def get_days(self):
+        """Realiza el calculo en cuenta regresiva del tiempo que resta para que se pueda acreditar el cheque
+        Reorna ```type timeDelta```"""
+        delta = self.fecha_cobro - datetime.today()
+        return delta.days+1
+
 
 class Chequera(db.Model):
     id =db.Column(db.Integer, primary_key=True, index=True)
@@ -267,6 +293,13 @@ class Chequera(db.Model):
                 emitido = False,
             )
             n += 1
+    
+    def disponibles(self):
+        disponibles = 0;
+        for cheque in self.cheques:
+            if not cheque.emitido:
+                disponibles += 1
+        return disponibles
 
 
 class Proveedor(db.Model):

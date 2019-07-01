@@ -81,7 +81,6 @@ function gjson(e){
         comentario:c,
         factura:factura.value,
         forma_pago:fp,
-        fecha :fecha_cobro.value,
     }
     if (fp == 'chequera'){
         cheq ={
@@ -205,8 +204,12 @@ function getCheuqesTercero(lista){
                 let option;
                 let i;
                 for (i=0; i< data.length; i++){
+                    let factura;
+                    if(data[i].factura){
+                        factura = 'A';
+                    }else {factura ='B' }
                     option = document.createElement('option');
-                    option.text = data[i].numero +' $'+ data[i].monto;
+                    option.text = `Bco: ${data[i].banco} Nº:${data[i].numero} $ ${data[i].monto} Fecha:${data[i].postdatado} - ${factura}`;
                     option.value = data[i].id;
                     lista.add(option)
                 }

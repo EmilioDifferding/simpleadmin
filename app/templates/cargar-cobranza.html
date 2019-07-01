@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section columns">
+    <div class="container column">
+        <div class="field">
+            <label for="cliente" class="label">Cliente</label>
+            <div class="control">
+                <div class="select">
+                    <select name="cliente" id="cliente">{# cargaraca la lista de clientees#}
+                        {% for cliente in clientes %}
+                            <option value="{{cliente.id}}">{{cliente.nombre}}</option>
+                        {% endfor %}
+                        
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label for="monto" class="label">Monto</label>
+            <div class="control">
+                <input type="text" class="input" id="monto">
+            </div>
+        </div>
+        <div class="field">
+            <label for="comentario" class="label">Comentario</label>
+            <div class="control">
+                <textarea class="textarea" placeholder="Comentario" name=comentario id="comentario"></textarea>
+            </div>
+        </div>
+        <div class="field">
+            <div class="control">
+                <label  class="radio">efectivo
+                    <input class="radio-input"type="radio" name="pago" value="efectivo" checked>
+                </label>
+                <label class=radio> Cheque
+                    <input class="radio-input"type="radio" name="pago" value="cheque">
+                </label>
+            </div>
+        </div>
+        <div class="field">
+            <label for="factura" class="label">Factura</label>
+            <div class="control">
+                <div class="select">
+                    <select name="factura" id="factura">
+                        <option value="0">A</option>
+                        <option value="1">B</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <input class="button is-success" type="button" value="Aceptar" id="generar">
+    </div> {# FIN SELECCION DE CLIENTE #}
+
+
+    <div class="container column">
+        {# INICIO CARGA CHEQUE #}
+        <div class="" id=cheque-tercero style="display: none">
+            <div class="field">
+                <label for="numero"class="label">Número del Cheque</label>
+                <div class="control">
+                    <input type="text" class="input" name="numero" id="numero">
+                </div>
+            </div>
+            <div class="field">
+                <label for="entidad"class="label">Entidad/Banco</label>
+                <div class="control">
+                    <input type="text" class="input" name="entidad" id="entidad">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="fecha_emision" class="label">Fecha emisión</label>
+                <div class="control">
+                    <input type="date" class="input" id="fecha_emision">
+                </div>
+            </div>
+            <div class="field">
+                <label for="fecha_cobro" class="label">Fecha de acreditación</label>
+                <div class="control">
+                    <input type="date" class="input" id="fecha_cobro">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}
+
+{% block script %}
+<script>
+let fp;
+let formaDePago = document.getElementsByClassName('radio-input');
+let campoCheques = document.getElementById('cheque-tercero');
+let comentario = document.getElementById('comentario');
+let monto = document.getElementById('monto');
+let entidad = document.getElementById('entidad');
+let numero = document.getElementById('numero');
+let emision = document.getElementById('fecha_emision');
+let cobro = document.getElementById('fecha_cobro');
+let factura = document.getElementById('factura');
+
+let btn = document.getElementById('generar');
+btn.addEventListener('click', generarCobranza)
+
+function generarCobranza(){
+    let cheque;
+    let cliente = {
+        id : document.getElementById('cliente').value,
+        factura :  factura.value,
+        comentario : comentario.value,
+        monto : parseFloat(monto.value),
+        forma_pago : fp
+    }
+    if (fp == 'cheque'){
+        cheque = {
+            monto : monto.value,
+            numero : numero.value,
+            fechaEmision : emision.value,
+            fechaCobro : cobro.value,
+            entidad : entidad.value
+        }
+    }
+    let http = new XMLHttpRequest();
+    let url = "/cobrar";
+    http.open("POST", url,true);
+    http.setRequestHeader("Content-Type", "application/json");
+    http.onreadystatechange = function(){
+        if(http.readyState == 4 && http.status == 200) { 
+            //aqui obtienes la respuesta de tu peticion
+            console.log(http.responseText);
+            alert(http.responseText);
+        }
+    }
+    http.send(JSON.stringify({cliente,cheque }))
+}
+
+for (let i=0; i < formaDePago.length; i++){
+    formaDePago[i].addEventListener('change', getFormaDePago);
+}
+
+function getFormaDePago(e){
+    let index;
+    for (index=0; index<formaDePago.length; index++){
+        if (formaDePago[index].checked){
+            switch (formaDePago[index].value){
+                case 'efectivo':
+                    campoCheques.style.display = 'none';
+                    console.log(formaDePago[index].value);
+                    fp = formaDePago[index].value;
+                    break;
+                case 'cheque':
+                campoCheques.style.display = 'block';
+                console.log(formaDePago[index].value);
+                fp = formaDePago[index].value;
+                break;
+            }
+        }
+    }
+}
+getFormaDePago();
+
+
+</script>
+{% endblock script %}
+
+<div class="field">
+    <label for="chequeTercero" class="label">Seleccione el cheque</label>
+    <div class="control">
+        <div class="select">
+            <select name="chequeTercero-1" id="chequeTercero-1"></select>
+        </div>
+    </div>
+</div>

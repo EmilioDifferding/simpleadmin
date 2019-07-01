@@ -1,59 +1,46 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="section">
-        <div class="tabs is-medium is-toggle is-centered">
+    <div class="level">
+        <div class="tabs is-medium is-toggle level-left">
             <ul>
-                <li id="v" class="btn "><a onclick="openTab('ventas')">Todos</a></li>
-                <li id="c" class="btn"><a onclick="openTab('cobros')">Salida</a></li>
-                <li id="s" class="btn"><a onclick="openTab('servicios')">Entrada</a></li>
+                <li id="c" class="btn"><a onclick="openTab('cobros')">Emitidos</a></li>
+                <li id="s" class="btn"><a onclick="openTab('servicios')">Recibidos</a></li>
+                <li id='v' class="btn"><a onclick="openTab('ventas')">Redireccionados</a></li>
             </ul>
         </div>
-        <table class="table is-hoverable" id="ventas">
-        <thead>
-            <tr>
-                <th>Cheque id</th>
-                <th>Numero</th>
-                <th>state</th>
-                <th>importe</th>
-                <th>de tercero</th>
-                <th>Es entrada</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in cheques %}
-                <tr>
-                    <td>{{c.id}}</td>
-                    <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
-                    <td>{{c.state}}</td>
-                    <td>{{c.importe}}</td>
-                    <td>{{c.es_de_tercero}}</td>
-                    <td>{{c.es_entrada}}</td>
-                    <td><p class="button subtitle is-primary"><a href="{{url_for('acreditar_cheque', id=c.id)}}" class="has-text-white">acreditado</a></p></td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 
-    <table class="table is-hoverable" id="cobros" style="display: none;">
+        <div class="level-right">
+            <a class='button is-info'href=""><strong>Chequeras</strong></a>
+        </div>
+    </div>
+
+        
+    <table class="table is-hoverable" id="cobros" >
             <thead>
                 <tr>
-                    <th>Cheque id</th>
+                    <th>Fecha</th>
+                    <th>Chequera</th>
+                    <th>Fecha Cheque</th>
+                    <th>Banco</th>
                     <th>Numero</th>
-                    <th>state</th>
-                    <th>importe</th>
-                    <th>de tercero</th>
-                    <th>Es entrada</th>
+                    <th>Destino</th>
+                    <th>Importe</th>
+                    <th>Plazo</th>
                 </tr>
             </thead>
             <tbody>
                 {% for c in cheques_out %}
                     <tr>
-                        <td>{{c.id}}</td>
+                        <td>{{c.fecha_emision}}</td>
+                        <td>{{c.chequera.id}}</td>
+                        <td>{{c.fecha_cobro}}</td>
+                        <td>{{c.banco}}</td>
                         <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
-                        <td>{{c.state}}</td>
+                        <td>{{c.destino}}</td>
                         <td>{{c.importe}}</td>
-                        <td>{{c.es_de_tercero}}</td>
-                        <td>{{c.es_entrada}}</td>
+                        <td> {{c.get_days()}} Día/s</td>
+                        <td><a href="{{url_for('acreditar_cheque', id=c.id)}}">acreditar</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -62,25 +49,51 @@
         <table class="table is-heverable" id="servicios" style="display:none;">
                 <thead>
                     <tr>
-                        <th>Cheque id</th>
-                        <th>Numero</th>
-                        <th>state</th>
+                        <th>Fecha emisión</th>
+                        <th>Fecha Cobro</th>
+                        <th>Número</th>
+                        <th>Banco</th>
+                        <th>Emisor</th>
                         <th>importe</th>
-                        <th>de tercero</th>
-                        <th>Es entrada</th>
+                        <th>Plazo</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in cheques_in %}
                         <tr>
-                            <td>{{c.id}}</td>
+                            <td>{{c.fecha_emision}}</td>
+                            <td>{{c.fecha_cobro}}</td>
                             <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
-                            <td>{{c.state}}</td>
+                            <td>{{c.banco}}</td>
+                            <td>{{c.emisor}}</td>
                             <td>{{c.importe}}</td>
-                            <td>{{c.es_de_tercero}}</td>
-                            <td>{{c.es_entrada}}</td>
-                        </tr>
+                            <td>{{c.get_days()}} Día(s)</td>
+                            <td><a href="{{url_for('acreditar_cheque', id=c.id)}}">acreditar</a></td>
                     {% endfor %}
                 </tbody>
             </table>
+
+            <table class="table is-heverable" id="ventas" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Número</th>
+                            <th>Banco</th>
+                            <th>Emisor</th>
+                            <th>Destino</th>
+                            <th>importe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in chredirect %}
+                            <tr>
+                                <td>{{c.fecha}}</td>
+                                <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
+                                <td>{{c.banco}}</td>
+                                <td>{{c.emisor}}</td>
+                                <td>{{c.destino}}</td>
+                                <td>{{c.importe}}</td>
+                        {% endfor %}
+                    </tbody>
+                </table>
 {% endblock content %}

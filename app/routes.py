@@ -43,7 +43,7 @@ def obtener_cheqeus(id):
 def chequeTercero():
     cheques = Cheque.query.filter_by(state=True).filter_by(acreditado=False).filter_by(es_de_tercero = True).filter_by(emitido=False).all()
     print('chequesTercerosFiltrados',cheques)
-    lista = [{'id':c.id, 'numero':c.numero, 'monto':c.importe} for c in cheques]
+    lista = [{'id':c.id, 'numero':c.numero, 'monto':c.importe, 'banco':c.banco, 'postdatado':datetime.strftime(c.fecha_cobro, '%d/%m/%y'),'factura':c.factura} for c in cheques]
     print(jsonify(lista))
     return jsonify(lista)
 
@@ -833,43 +833,63 @@ def saldo_proveedores():
 
 @app.route('/cobrar', methods=['GET','POST'])
 def cobrar():
-    form = CobranzaForm()
-    form.cliente.choices = [(c.id, c.nombre)for c in Cliente.query.filter_by(state=True).order_by('nombre').all()]
-    
-    if form.validate_on_submit():
-        cliente = Cliente.query.filter_by(id=form.cliente.data).first()
-        if form.hay_cheque.data:
-            forma_pago = 'cheque'
-        else:
-            forma_pago = 'efectivo'
-        if form.factura.data < 1:
+    clientes = Cliente.query.filter_by(state=True).all()
+    if request.method == 'POST':
+        req = request.get_json()
+        cliente = Cliente.query.filter_by(id=req['cliente']['id']).first()
+        
+        if int(req['cliente']['factura']) < 1:
             factura = True
         else:
             factura = False
+        
+        if req['cliente']['forma_pago'] == 'cheque':
+            hay_cheque = True
+            forma_pago = 'cheque'
+        else:
+            hay_cheque = False
+            forma_pago = 'efectivo'
         cobro = Cobro(
             proveedor = None,
             cliente = cliente,
             nombre = cliente.nombre,
             factura = factura,
-            monto = round(form.monto.data,2),
-            fecha = form.fecha.data,
-            comentario = form.comentario.data,
-            hay_cheque = form.hay_cheque.data,
+            monto = round(req['cliente']['monto'],2),
+            fecha = datetime.utcnow(),
+            comentario = req['cliente']['comentario'],
+            hay_cheque = hay_cheque,
             entrada = True,
             state = True,
             forma_pago=forma_pago
         )
         db.session.add(cobro)
         cobro.restar_saldo()
-        db.session.commit()
 
-        if form.hay_cheque.data:
-            flash('Ahora cargue los datos del cheque.')
-            return redirect(url_for('cargar_cheque', id=cobro.id))
+        if hay_cheque:
+            cheque = Cheque(
+                fecha_emision = datetime.strptime(req['cheque']['fechaEmision'], "%Y-%m-%d"),
+                fecha_cobro = datetime.strptime(req['cheque']['fechaCobro'],"%Y-%m-%d"),
+                banco = req['cheque']['entidad'],
+                importe=req['cheque']['monto'],
+                numero = req['cheque']['numero'],
+                comentario = cobro.comentario,
+                fecha = datetime.utcnow(),
+                emisor = cliente.nombre,
+                es_entrada= True,
+                es_de_tercero=True,
+                cliente = cliente,
+                factura =factura,
+                proveedor=None,
+                cobro = cobro,
+            )
+            cheque.get_destino()
+            db.session.add(cheque)
+            db.session.commit()
+            return 'cobro con cheque OK'
         else:
-            flash('Cobro en efectivo cargado con exito!.')
-            return redirect(url_for('listar_cobros'))
-    return render_template('formulario-de-carga.html', title='Cargar cobro de un cliente', form=form)
+            db.session.commit()
+            return 'Cobro efectivo OK'
+    return render_template('cargar-cobranza.html', title='Cargar cobro de un cliente', clientes=clientes)
 
 
 @app.route('/decodificar',methods=['GET','POST'])
@@ -949,11 +969,13 @@ def pagar():
                 cheque.cobro = pago
                 cheque.importe = round(float(req['proveedor']['monto']),2)
                 cheque.comentario = req['proveedor']['comentario']
-                cheque.emitido = True
                 cheque.es_entrada = False
                 cheque.es_de_tercero = False
                 cheque.acreditado = False
                 cheque.proveedor = proveedor
+                cheque.emitir()
+                cheque.get_destino()
+                cheque.get_emisor()
                 db.session.commit()
                 return 'El Pago se realizo con éxito'
             elif req['proveedor']['forma_pago']=='cheque3ro':
@@ -961,9 +983,10 @@ def pagar():
                 for id in req['cheq']['cids']:
                     c = Cheque.query.filter_by(id=id).first()
                     c.es_entrada =False
-                    c.emitido = True
+                    c.emitir()
                     pago.cheques.append(c)
                     c.proveedor = proveedor
+                    c.get_destino()
                     print('emitidoooo')
                 db.session.commit()
                 return 'Cheques cargados'
@@ -973,51 +996,7 @@ def pagar():
     
     else:
         return render_template('cargar-pago.html', proveedores=p, chequeras=chequeras, title='Cargar pago a proveedor')
-# @app.route('/pagar', methods=['GET','POST'])
-# def pagar():
-#     # form = CobranzaForm()
-#     # form.cliente.choices = [(c.id, c.nombre)for c in Proveedor.query.filter_by(state=True).order_by('nombre').all()]
-#     if request.method == 'POST':
-#         print(request.is_json)
-#         c = request.get_json()
-#         proveedor = Proveedor.query.filter_by(id=c['proveedor']['id']).first()
-#         if int(c['proveedor']['factura']) < 1:
-#             factura = True
-#         else:
-#             factura = False
-#         if c['proveedor']['forma_pago'] != 'efectivo':
-#             hay_cheque = True
-#         else: hay_cheque = False
-#         cobro = Cobro(
-#             # forma_pago = c['forma_pago'],
-#             monto =round(float(c['proveedor']['monto']),2),
-#             comentario=c['proveedor']['comentario'],
-#             proveedor = proveedor,
-#             nombre = proveedor.nombre,
-#             entrada = False,
-#             factura = factura,
-#             fecha = datetime.utcnow(),
-#             state = True,
-#             hay_cheque = hay_cheque,
-#             )
-#         db.session.add(cobro)
-#         cobro.restar_saldo()
-#         db.session.commit()
-#         print (cobro)
-#         print(cobro.proveedor.nombre)
-#         print(c['proveedor']['forma_pago'])
-#         valor = c['proveedor']['monto']
-#         print(valor)
-#         return str(c)
 
-#     form = CargarChequeForm()
-#     chequeras = Chequera.query.filter_by(state = True).all()
-#     p = Proveedor.query.filter_by(state=True).all()
-#     lista = list(filter(lambda chequera: not chequera.state, chequeras))
-#     listaChequera = [{'id': c.id, 'numero':c.numero_chequera, 'banco':c.banco} for c in lista]
-#     c = chequeras
-#     return render_template('cargar-pago.html',proveedores=p, chequeras = c, form=form, title='Cargar un pago de cliente')
-    
 
 
 
@@ -1179,12 +1158,13 @@ def listar_cheques():
     cheques_all = Cheque.query.filter_by(state=True).filter_by(emitido=True).all()
     cheques_in = filter(lambda cheque: cheque.es_entrada and(cheque.cliente!=None), cheques)
     cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None), cheques)
-
+    cheques_redireccionados = filter(lambda cheque: (cheque.es_de_tercero is True) and (cheque.emitido is True), cheques)
     return render_template(
         'lista-cheques.html',
         cheques=cheques_all,
         cheques_in=cheques_in,
         cheques_out=cheques_out,
+        chredirect = cheques_redireccionados,
         title = 'lista de cheques')
 
 @app.route('/acreditar-cheque/<id>')
