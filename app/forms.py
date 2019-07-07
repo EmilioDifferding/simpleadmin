@@ -8,11 +8,11 @@ from app.models import Proveedor,Producto,Cliente
 
 
 class CargarChequeraForm(FlaskForm):
-    numero_chequera = IntegerField('Numero de chequera', validators=[DataRequired()])
-    banco = StringField('Entidad Bancaria')
-    cantidad_cheques = IntegerField('Cantidad de cheques, 20 por defecto', validators=[Optional()])
-    inicio = StringField('numero inicial de los cheques', validators=[DataRequired()])
-    submit = SubmitField('Aceptar')
+    numero_chequera = IntegerField('Numero de chequera', validators=[DataRequired()], render_kw={'class':'input'})
+    banco = StringField('Entidad Bancaria',validators=[DataRequired()],render_kw={'class':'input'})
+    cantidad_cheques = IntegerField('Cantidad de cheques, 20 por defecto', validators=[Optional()],render_kw={'class':'input', 'type':'number'})
+    inicio = StringField('numero inicial de los cheques', validators=[DataRequired()],render_kw={'class':'input', 'type':'number'})
+    submit = SubmitField('Aceptar',render_kw={'class':'submit button is-info'})
 
 class CargarClienteForm(FlaskForm):
     nombre = StringField('Nombre de Empresa', validators=[DataRequired()])
@@ -159,16 +159,17 @@ class EditarProductoForm(FlaskForm):
                 raise ValidationError('Este Producto ya existe en la base de datos.')
 
 class CargarVentaForm(FlaskForm):
-    fecha = DateField(format='%d/%m/%y - %H:%M',default=datetime.utcnow(),validators=[Optional()])
-    clientes = SelectField('Seleccione cliente', coerce=int)
+    fecha = DateField(format='%d/%m/%y - %H:%M', default=datetime.utcnow(),
+    validators=[Optional()], render_kw={'class':' input',})
+    clientes = SelectField('Seleccione cliente', coerce=int, render_kw={'class':'select'})
     producto = SelectField('Seleccione el producto', coerce=int)
-    cantidad = FloatField('Cantidad')
-    precio_unitario = FloatField('Precio unitario')
-    sub_total = FloatField('Sub total Productos')
+    cantidad = FloatField('Cantidad',render_kw={'class':' input', 'type':'number'})
+    precio_unitario = FloatField('Precio unitario',render_kw={'class':' input', 'type':'number'})
+    sub_total = FloatField('Sub total Productos',render_kw={'class':' input', 'type':'number'})
     flete = SelectField('Servicio de flete', coerce=int)
-    costo_flete = FloatField('Costo Flete', default=0)
-    monto_total = FloatField('Total a Pagar')
-    comentario=TextAreaField('Comentario')
+    costo_flete = FloatField('Costo Flete', default=0,render_kw={'class':' input', 'type':'number'})
+    monto_total = FloatField('Total a Pagar',render_kw={'class':' input', 'type':'number'})
+    comentario=TextAreaField('Comentario',render_kw={'class':' input'})
     factura_cliente = BooleanField('Facturar cliente', default=False)
     factura_flete = BooleanField('Facturar flete', default=False)
     # pagado = BooleanField('Pagado?',default=False)

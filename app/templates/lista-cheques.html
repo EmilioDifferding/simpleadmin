@@ -11,7 +11,7 @@
         </div>
 
         <div class="level-right">
-            <a class='button is-info'href=""><strong>Chequeras</strong></a>
+            <a class='button is-info'href="{{url_for('chequeras')}}"><strong>Chequeras</strong></a>
         </div>
     </div>
 
@@ -34,7 +34,7 @@
                     <tr>
                         <td>{{c.fecha_emision}}</td>
                         <td>{{c.chequera.id}}</td>
-                        <td>{{c.fecha_cobro}}</td>
+                        <td>{{c.fecha_cobro.strftime("%d/%m/%Y")}}</td>
                         <td>{{c.banco}}</td>
                         <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
                         <td>{{c.destino}}</td>
@@ -61,8 +61,8 @@
                 <tbody>
                     {% for c in cheques_in %}
                         <tr>
-                            <td>{{c.fecha_emision}}</td>
-                            <td>{{c.fecha_cobro}}</td>
+                            <td>{{c.fecha_emision.strftime("%d/%m/%Y")}}</td>
+                            <td>{{c.fecha_cobro.strftime("%d/%m/%Y")}}</td>
                             <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
                             <td>{{c.banco}}</td>
                             <td>{{c.emisor}}</td>
@@ -87,7 +87,7 @@
                     <tbody>
                         {% for c in chredirect %}
                             <tr>
-                                <td>{{c.fecha}}</td>
+                                <td>{{c.fecha.strftime("%d/%m/%Y")}}</td>
                                 <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
                                 <td>{{c.banco}}</td>
                                 <td>{{c.emisor}}</td>

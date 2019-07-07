@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<table class="table is-hoverable" >
+    <h1 class="title">Monto total emitido: $ {{chequera.importe_total()}}</h1>
+    <h2><strong>Cantidad: </strong> {{chequera.cheques.count()}}</h2>
+    <h2><strong>Emitidos: </strong>{{chequera.emitidos()}}</h2>
+    <h2><strong>Disponibles: </strong>{{chequera.disponibles()}}</h2>
+    <h3><strong>Nº Inicio:</strong> {{chequera.cheques[0].numero}}</h3>
+    <h3><strong>Nº Final:</strong> {{chequera.cheques[-1].numero}}</h3>
+    <a href="{{url_for('borrar_chequera',id=chequera.id)}}" class="button is-danger">Borrar esta chequera</a>
+
+    <div class="section">
+    <h2 class="subtitle"><strong>Cheques Emitidos</strong></h2>
+    <thead>
+        <tr>
+            <th>Numero</th>
+            <th>Fecha Cheque</th>
+            <th>Fecha Acreditación</th>
+            <th>Destino</th>
+            <th>Importe</th>
+            <th>Plazo</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+            {% for c in chequera.cheques %}
+            {% if c.emitido is sameas true %}
+            <tr>
+                <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
+                <td>{{c.fecha_emision}}</td>
+                <td>{{c.fecha_cobro}}</td>
+                <td>{{c.destino}}</td>
+                <td>${{c.importe}}</td>
+                <td> {{c.get_days()}} Día/s</td>
+                {% if c.acreditado %}
+                    <td>acreditado</td>
+                    {% else %}
+                    <td><a href="{{url_for('acreditar_cheque', id=c.id)}}">acreditar</a></td>
+                {% endif %}
+                    </tr>
+            {% endif %}
+            
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock content %}

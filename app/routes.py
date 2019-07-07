@@ -475,23 +475,18 @@ def cargar_compra():
             compra.actualizar_saldo_flete(suma=True)
             db.session.add(servicio)
 
-
         compra.actualizar_saldo_proveedor(suma=True)
-        
         compra.producto.actualizar_stock(
             cantidad = form.cantidad.data,
             factura = form.factura_proveedor.data,
             entrada = True
         )
-        
-        # compra.actualizar_saldo_flete(suma=True)
-        # if hay_servicio():
-        #     db.session.add(hay_servicio()[1])
+ 
         db.session.commit()
         compra.producto.calcular_precio_unitario()
         flash('Compra cargada con Exito!')
         return redirect(url_for('listar_compras'))
-        
+
     return render_template('formulario-de-carga.html', form=form, title='Cargar nueva compra', atras=url_for('listar_compras'))
 
 @app.route('/compras')
@@ -683,115 +678,6 @@ def administracion():
     )
 
 
-""" def caja():
-    totalProdAcum = 0.0 #activos en productos
-    prodAcum_a= 0.0 #activos productos factura A
-    prodAcum_b= 0.0 #activos productos factura V
-    saldoProveedores = 0.0 #$ que se va a ir
-    spa=0.0
-    spb=0.0
-    sca=0.0
-    scb=0.0
-    saldoClientes = 0.0 #$ que va a entrar
-    cobros = 0.0 #$ que ingreso
-    pagos = 0.0 # $ que salio
-    cheques_in =0.0 # cheques que se registraron como cobro
-    cheques_out = 0.0 #cheuqes registrados como pagos
-
-    prod = Producto.query.filter(((Producto.cantidad_a > 0) | (Producto.cantidad_b > 0))&(Producto.state)).all()
-    
-    clientes = Cliente.query.filter(((Cliente.saldo_a > 0) | (Cliente.saldo_b > 0)|(Cliente.saldo_a < 0 )| (Cliente.saldo_b < 0))&(Cliente.state)).all()
-    
-    proveedores = Proveedor.query.filter((Proveedor.saldo_a > 0) | (Proveedor.saldo_b > 0)|(Proveedor.saldo_a < 0) | (Proveedor.saldo_b < 0)).all()
-
-    entradas = Cobro.query.filter_by(entrada=True).all()
-    salidas = Cobro.query.filter_by(entrada=False).all()
-    
-    def filtrar_True(l):
-        return (l.factura)
-    
-    def filtrar_False(l):
-        return ((l.factura) == False)
-
-    entradas_a = 0.0
-    for e in filter(filtrar_True, entradas):
-        entradas_a += e.monto
-    
-    entradas_b = 0.0
-    for e in filter(filtrar_False, entradas):
-        entradas_b += e.monto
-
-    salidas_a = 0.0
-    for s in filter(filtrar_True, salidas):
-        salidas_a += s.monto
-    
-    salidas_b = 0.0
-    for s in filter(filtrar_False, salidas):
-        salidas_b += s.monto
-    
-    # Valor acumulado de productos en stock
-    for p in prod:
-        prodAcum_a += (p.precio_compra * p.cantidad_a)
-        prodAcum_b += (p.precio_compra * p.cantidad_b)
-        totalProdAcum += (p.precio_compra*(p.cantidad_a + p.cantidad_b))
-    print(totalProdAcum)
-    print('CANTIDAD DE PROD CONTADOS {}'.format(len(prod)))
-
-    # Total de saldos de clientes
-    for c in clientes:
-        sca += c.saldo_a
-        scb += c.saldo_b
-        saldoClientes += (c.saldo_a + c.saldo_b)
-    saldoClientes = round(saldoClientes,2)
-    
-    # Total de saldos a proveedores
-    for p in proveedores:
-        spa += p.saldo_a
-        spb += p.saldo_b 
-        saldoProveedores += (p.saldo_a + p.saldo_b)
-    saldoProveedores = round(saldoProveedores,2)
-
-    # Entradas de dinero
-    for e in entradas:
-        cobros += round(e.monto,2)
-
-    # Salidas de dinero
-    for s in salidas:
-        pagos +=round( s.monto,2)
-
-
-    print('SALDO CLIENTES: {}'.format(saldoClientes))
-    print('CLIENTES CONTADOS: {}'.format(len(clientes)))
-    
-    totin = (saldoClientes+cobros+totalProdAcum)
-    totout = saldoProveedores+pagos
-    #TODO: FORMULA BALANCE
-    #saldo proveedores, cheques emitidos. caja.
-    # +Stock - (salida)Saldoproveedores +SaldoClientes +Caja Efectivo y cheque -Cheques emitidos. 
-    #Implementar chequera 
-    
-    balance = round(totin-totout,2)
-    return render_template(
-        'caja.html',
-        title='Caja',
-        caja = caja,
-        pagos=pagos,
-        cobros=cobros,
-        saldoP=saldoProveedores,
-        saldoC=saldoClientes,
-        totalP_A=totalProdAcum,
-        balance=balance,
-        prodAcum_a=prodAcum_a,
-        prodAcum_b=prodAcum_b,
-        spa=spa,
-        spb=spb,
-        sca=sca,
-        scb=scb,
-        sa=salidas_a,
-        sb=salidas_b,
-        ea=entradas_a,
-        eb=entradas_b
-        ) """
 
 @app.route('/clientes/saldos')
 def saldo_clientes():
@@ -1001,36 +887,7 @@ def pagar():
 
 
 # BACKUP FORMA ANTIGUA
-"""      strptime(c['proveedor']['fecha'],"%Y-%m-%d")
-    if form.validate_on_submit():
-        proveedor = Proveedor.query.filter_by(id=form.cliente.data).first()
-
-        if form.factura.data < 1:
-            factura = True
-        else:
-            factura = False
-        cobro = Cobro(
-            proveedor = proveedor,
-            cliente = None,
-            nombre = proveedor.nombre,
-            factura= factura,
-            monto = round(form.monto.data,2),
-            fecha = form.fecha.data,
-            comentario = form.comentario.data,
-            hay_cheque = form.hay_cheque.data,
-            entrada=False,
-            state = True
-        )
-        db.session.add(cobro)
-        cobro.restar_saldo()
-        db.session.commit()
-        
-        if form.hay_cheque.data:
-            flash('Ahora cargue los datos del cheque')
-            return redirect(url_for('cargar_cheque', id=cobro.id))
-        else:
-            flash('Pago cargado con exito!.')
-            return redirect(url_for('listar_pagos')) """
+# strptime(c['proveedor']['fecha'],"%Y-%m-%d")
 
 @app.route('/cargar-cheque/<id>', methods=['GET','POST'])
 def cargar_cheque(id):
@@ -1064,6 +921,28 @@ def cargar_cheque(id):
         form.importe.data = cobro.monto
     return render_template('formulario-de-carga.html', title='Cargar Cheque', form=form, control=control, id=cobro.id)
 
+@app.route('/chequeras')
+def chequeras():
+    chequeras = Chequera.query.filter_by(state=True).all()
+    return render_template('chequera.html', chequeras=chequeras, tile='Chequeras')
+
+@app.route('/detalle-chequera/<id>')
+def detalle_chequera(id):
+    chequera = Chequera.query.filter_by(id=id).first_or_404()
+    return render_template('chequera-detalle.html', chequera=chequera, title="Chequera Nº{} - {}".format(chequera.id, chequera.banco))
+    
+@app.route('/borrar-chequera/<id>')
+def borrar_chequera(id):
+    c = Chequera.query.filter_by(id=id).first_or_404()
+    if c.emitidos() > 0:
+        flash("No puede borrarse porque hay cheques emitidos")
+        return redirect(url_for('detalle_chequera', id=id))
+    else:
+        c.state = False
+        db.session.commit()
+        flash('Chequera borrada')
+        return redirect(url_for('chequeras'))
+
 @app.route('/cargar-chequera', methods=['GET','POST'])
 def cargar_chequera():
     form = CargarChequeraForm()
@@ -1080,8 +959,9 @@ def cargar_chequera():
         db.session.commit()
         flash('Chequera cargada!')
     elif request.method == 'GET':
-        form.numero_chequera.data = len(ultima_chequera)+ 1
-    return render_template('formulario-de-carga.html', form=form, title='Cargar Chequera')
+        form.numero_chequera.data = len(ultima_chequera) + 1
+        
+    return render_template('formulario-de-carga.html', form=form, title='Cargar Chequera', atras=url_for('index'))
     
 
 
@@ -1157,7 +1037,7 @@ def listar_cheques():
     cheques = Cheque.query.filter_by(state=True).all()
     cheques_all = Cheque.query.filter_by(state=True).filter_by(emitido=True).all()
     cheques_in = filter(lambda cheque: cheque.es_entrada and(cheque.cliente!=None), cheques)
-    cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None), cheques)
+    cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None) and(cheque.es_de_tercero !=True), cheques)
     cheques_redireccionados = filter(lambda cheque: (cheque.es_de_tercero is True) and (cheque.emitido is True), cheques)
     return render_template(
         'lista-cheques.html',

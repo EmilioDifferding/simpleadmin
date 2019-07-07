@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="section">
+        <h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_proveedor')}}">Cargar proveedor nuevo</a></h5>
+
+</div>
     <table class="table">
         <thead>
             <tr>
@@ -24,5 +28,4 @@
         </tbody>
     </table>
 
-     <h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_proveedor')}}">Cargar proveedor nuevo</a></h5>
 {% endblock content %}

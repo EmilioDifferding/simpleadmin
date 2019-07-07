@@ -300,6 +300,19 @@ class Chequera(db.Model):
             if not cheque.emitido:
                 disponibles += 1
         return disponibles
+    
+    def emitidos(self):
+        emitidos=0
+        for cheque in self.cheques:
+            if cheque.emitido:
+                emitidos += 1
+        return emitidos
+    def importe_total(self):
+        total = 0.0
+        for c in self.cheques:
+            if c.emitido:
+                total += c.importe
+        return round(total, 2)
 
 
 class Proveedor(db.Model):

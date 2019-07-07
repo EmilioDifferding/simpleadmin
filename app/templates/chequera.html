@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<table class="table">
+    <thead>
+        <th>Chequera</th>
+        <th>Entidad</th>
+        <th>Cheques disponibles</th>
+        <th>Cheques emitidos</th>
+        <th>Monto total</th>
+    </thead>
+
+    <tbody>
+        {% for chequera in chequeras %}
+        <tr>
+            <td><a href="{{url_for('detalle_chequera', id=chequera.id)}}">{{chequera.id}}</a></td>
+            <td>{{chequera.banco}}</td>
+            <td>{{chequera.disponibles()}}</td>
+            <td>{{chequera.emitidos()}}</td>
+            <td>{{chequera.importe_total()}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock content %}
