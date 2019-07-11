@@ -10,4 +10,4 @@ Los modelos de clientes y proveedores almacenan los siguientes datos:
 - Cuit.
 - Email.
 - Saldos según facturación (A/B)
-- 
+## Un cambio desde otro lado- 
