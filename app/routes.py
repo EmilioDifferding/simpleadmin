@@ -572,6 +572,91 @@ def borrar_compra(id):
 #TODO: Redefinir las peticiones teniendo en cuenta las facturas
 @app.route('/administracion')
 def administracion():
+
+    def split_montos(transacciones):
+        '''PAGOS Y COBRANZAS
+        [0]=EF_A, [1]=EF_B, [2]=CHAC_A, [3]=CHAC_B,[4]=CH_A,[5]=CH_B
+        devuelve una lista con las sumatorias de los montos de cheques y efectivo en A y B'''
+        efectivo_a = 0.0
+        efectivo_b = 0.0
+        cheque_b = 0.0
+        cheque_a = 0.0
+        ch_acred_a = 0.0
+        ch_acred_b = 0.0
+        total_a = 0.0
+        total_b = 0.0
+        for transaccion in transacciones:
+            if transaccion.factura:
+                #Transaccion con factura
+                total_a += transaccion.monto
+                if transaccion.hay_cheque:
+                    if not(transaccion.entrada):
+                        for cheque in transaccion.cheques:
+                            if cheque.emisor !='Propietario':
+                                if not(cheque.acreditado):
+                                    cheque_a += cheque.importe
+                                else:
+                                    ch_acred_a += cheque.importe
+                    else:
+                        for cheque in transaccion.cheques:
+                            if not(cheque.acreditado):
+                                cheque_a += cheque.importe
+                            else:
+                                ch_acred_a += cheque.importe
+                else:
+                    efectivo_a += transaccion.monto
+            else:
+                #Transaccion sin factura
+                total_b += transaccion.monto
+                if transaccion.hay_cheque:
+                    if not(transaccion.entrada):
+                        for cheque in transaccion.cheques:
+                            if cheque.emisor !='Propietario':
+                                if not(cheque.acreditado):
+                                    cheque_b += cheque.importe
+                                else:
+                                    ch_acred_b += cheque.importe
+                    else:
+                        for cheque in transaccion.cheques:
+                            if not(cheque.acreditado):
+                                cheque_b += cheque.importe
+                            else:
+                                ch_acred_b += cheque.importe
+                else:
+                    efectivo_b += transaccion.monto
+        
+        
+        return[
+            round(efectivo_a,2), 
+            round(efectivo_b,2), 
+            round(ch_acred_a,2),
+            round(ch_acred_b,2),
+            round(cheque_a,2), 
+            round(cheque_b,2),
+            round(total_a,2),
+            round(total_b,2)
+            ]
+
+    def getSaldos(lista):
+        """ Devuelve una lista con los saldos_a y saldos_b y ambos sumados"""
+        saldo_a= 0.0
+        saldo_b = 0.0
+        saldoTotal = 0.0
+        for element in lista:
+            saldo_a += element.saldo_a
+            saldo_b += element.saldo_b
+            saldoTotal = saldo_a + saldo_b
+        return [round(saldo_a,2) , round(saldo_b,2), round(saldoTotal,2)] 
+    
+    def getAcumuladoProductos(lista):
+        acum_a = 0.0
+        acum_b = 0.0
+        for element in lista:
+            acum_a += (element.cantidad_a*element.precio_compra)
+            acum_b += (element.cantidad_b*element.precio_compra)
+        return [round(acum_a,2), round(acum_b,2), round((acum_a+acum_b),2)]
+
+
     #Productos [ACTIVOS] con cantidad > de 0
     productos = Producto.query.filter(
         Producto.state & ((Producto.cantidad_a>0)|(Producto.cantidad_b>0)|
@@ -589,94 +674,39 @@ def administracion():
         (Proveedor.saldo_a<0)|(Proveedor.saldo_b<0))
     ).all()
 
-    #Lista de entradas y salidas que no se hayan borrado
-    inOut = Cobro.query.filter_by(state=True).all() 
-
+    inOut = Cobro.query.filter_by(state=True).all()
+    #Separar entre entradas y salidas
     entradas = list(filter(lambda e: e.entrada, inOut))
-    entradas_a = list(filter(lambda entrada: entrada.factura, entradas))
-    entradas_b = list(filter(lambda entrada: not(entrada.factura),entradas))
+    salidas = list(filter(lambda e: not(e.entrada), inOut))
 
-    salidas = list(filter(lambda e: not(e.entrada),inOut))
-    salidas_a = list(filter(lambda salida: salida.factura, salidas))
-    salidas_b = list(filter(lambda salida: not(salida.factura), salidas))
-
-    def getMonto(lista):
-        """ Obtiene de Cobro los de cada monto y los suma"""
-        monto = 0.0
-        for element in lista:
-            monto += element.monto
-        return round(monto,2)
-
-    cobranzas_a = getMonto(entradas_a)
-    cobranzas_b = getMonto(entradas_b)
-    pagos_a = getMonto(salidas_a)
-    pagos_b = getMonto(salidas_b)
-
-    chequesInAcr = Cheque.query.filter_by(state=True).filter_by(acreditado=True).filter_by(es_entrada=True).all()
-    cobrosEfectivo = Cobro.query.filter_by(state=True).filter_by(entrada=True).filter_by(forma_pago='efectivo').all()
-    chequesOutAcred = Cheque.query.filter_by(state=True).filter_by(acreditado=True).filter_by(es_entrada=False).all()
-    pagosEfectivo = Cobro.query.filter_by(state=True).filter_by(entrada=False).filter_by(forma_pago='efectivo').all()
-    cOutAcred = 0.0
-    cInAcred = 0.0
-    inEfectivo = 0.0
-    outEfectivo = 0.0
-    for cheques in chequesInAcr:
-        cInAcred += cheques.importe
-    for cobro in cobrosEfectivo:
-        inEfectivo += cobro.monto
-    for cheques in chequesOutAcred:
-        cOutAcred += cheques.importe
-    for pago in pagosEfectivo:
-        outEfectivo += pago.monto
-
-    caja = cobranzas_a + cobranzas_b - pagos_a - pagos_b
-    caja2 = inEfectivo + cInAcred - cOutAcred -outEfectivo
-    def getAcumuladoProductos(lista):
-        acum_a = 0.0
-        acum_b = 0.0
-        for element in lista:
-            acum_a += (element.cantidad_a*element.precio_compra)
-            acum_b += (element.cantidad_b*element.precio_compra)
-        return [round(acum_a,2), round(acum_b,2), round((acum_a+acum_b),2)]
-    acumuladoProductos = getAcumuladoProductos(productos)
-
-    def getSaldos(lista):
-        """ Devuelve una lista con los saldos_a y saldos_b y ambos sumados"""
-        saldo_a= 0.0
-        saldo_b = 0.0
-        saldoTotal = 0.0
-        for element in lista:
-            saldo_a += element.saldo_a
-            saldo_b += element.saldo_b
-            saldoTotal = saldo_a + saldo_b
-        return [round(saldo_a,2) , round(saldo_b,2), round(saldoTotal,2)] 
-
+    listIn = split_montos(entradas)
+    listOut = split_montos(salidas)
     saldoClientes = getSaldos(clientes)
     saldoProveedores = getSaldos(proveedores)
+    acumuladoProductos = getAcumuladoProductos(productos)
 
-    chequesDeTerceros = Cheque.query.filter(Cheque.state & Cheque.es_de_tercero & (not Cheque.acreditado)).all()
+    caja = listIn[0] + listIn[1] + listIn[2] +listIn[3] - listOut[0] - listOut[1] -listOut[2]-listOut[3]
 
-    chequesPropios = Cheque.query.filter(Cheque.state & (not Cheque.es_de_tercero) &(not Cheque.acreditado)).all()
-    totalCheques = 0.0
-    for c in chequesPropios:
-        totalCheques += c.importe
+    balance = saldoClientes[2]+acumuladoProductos[2]+caja+listIn[4]+listIn[5]-saldoProveedores[2]-listOut[4]-listOut[5]
     
-    balance = saldoClientes[2]+acumuladoProductos[2]+caja-saldoProveedores[2]-totalCheques
     return render_template(
         'administracion.html',
-        title='Caja',
+        tile = 'Administracion',
         saldoClientes = saldoClientes,
         saldoProveedores = saldoProveedores,
-        pagos_a = pagos_a,
-        pagos_b = pagos_b,
-        cobranzas_a = cobranzas_a,
-        cobranzas_b = cobranzas_b,
+        cobranzas_a = listIn[6],
+        cobranzas_b = listIn[7],
+        pagos_a = listOut[6],
+        pagos_b = listOut[7],
         acum = acumuladoProductos,
-        balance=balance,
-        caja=caja,
-        caja2 = caja2
+        balance = balance,
+        caja = caja,
+        caja2 = caja,
+        cia = listIn[4],
+        cib = listIn[5],
+        coa = listOut[4],
+        cob = listOut[5],
     )
-
 
 
 @app.route('/clientes/saldos')
@@ -767,6 +797,7 @@ def cobrar():
                 factura =factura,
                 proveedor=None,
                 cobro = cobro,
+                state = True,
             )
             cheque.get_destino()
             db.session.add(cheque)
