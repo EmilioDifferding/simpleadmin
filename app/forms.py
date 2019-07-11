@@ -216,4 +216,3 @@ class ChequedeTercero(FlaskForm):
 
 class ChequeChequera(FlaskForm):
     chequera = SelectField('chequera', coerce=int)
-    
