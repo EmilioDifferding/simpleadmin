@@ -1,4 +1,6 @@
 .vscode/
+vscode/
+.vscode
 venv/
 app.db
 SAworkspace.code-workspace

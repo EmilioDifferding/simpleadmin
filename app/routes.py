@@ -1,10 +1,10 @@
 from flask import render_template, url_for, redirect,jsonify, flash, request
 from app import app, db
-from app.models import Cliente,Producto,Proveedor,Venta,Compra, Cobro, Cheque, Servicio, Chequera
+from app.models import Cliente,Producto,Proveedor,Venta,Compra, Cobro, Cheque, Servicio, Chequera, GenericPayment
 from datetime import date, datetime, timedelta
 
 #Formularios
-from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm,ChequedeTercero, CargarChequeraForm
+from app.forms import CargarClienteForm,EditarClienteForm, CargarProveedorForm, EditarProveedorForm, EditarProductoForm, CargarCompraForm, CargarProductoForm, CargarVentaForm, CobranzaForm, CargarChequeForm,ChequedeTercero, CargarChequeraForm, GenericPayForm
 
 @app.route('/')
 @app.route('/index')
@@ -625,7 +625,6 @@ def administracion():
                 else:
                     efectivo_b += transaccion.monto
         
-        
         return[
             round(efectivo_a,2), 
             round(efectivo_b,2), 
@@ -685,7 +684,16 @@ def administracion():
     saldoProveedores = getSaldos(proveedores)
     acumuladoProductos = getAcumuladoProductos(productos)
 
-    caja = listIn[0] + listIn[1] + listIn[2] +listIn[3] - listOut[0] - listOut[1] -listOut[2]-listOut[3]
+    gastos = GenericPayment.query.filter_by(satate=True).all()
+    gasto_salida = 0.0
+    gasto_entrada = 0.0
+    for gasto in gastos:
+        if gasto.itsIn:
+            gasto_entrada += gasto.monto
+        else:
+            gasto_salida += gasto.monto
+
+    caja = listIn[0] + listIn[1] + listIn[2] +listIn[3] + gasto_entrada - gasto_salida - listOut[0] - listOut[1] -listOut[2]-listOut[3]
 
     balance = saldoClientes[2]+acumuladoProductos[2]+caja+listIn[4]+listIn[5]-saldoProveedores[2]-listOut[4]-listOut[5]
     
@@ -706,6 +714,7 @@ def administracion():
         cib = listIn[5],
         coa = listOut[4],
         cob = listOut[5],
+        gastos = gastos,
     )
 
 
@@ -915,7 +924,39 @@ def pagar():
         return render_template('cargar-pago.html', proveedores=p, chequeras=chequeras, title='Cargar pago a proveedor')
 
 
+@app.route('/generic-pay', methods=['GET','POST'])
+def generic_pay():
+    form = GenericPayForm()
+    if form.validate_on_submit():
+        pay = GenericPayment(
+            itsIn = form.itsIn.data,
+            concept = form.concept.data,
+            monto = form.monto.data,
+        )
+        db.session.add(pay)
+        db.session.commit()
+        flash('El pago se cargó con éxito')
+        return redirect(url_for('listar_generic_pays'))
+    return render_template('generic_pay.html', form=form, title='Cargar un pago o cobro simple - efectivo')
 
+@app.route('/generic-pay-list')
+def listar_generic_pays():
+    generic = GenericPayment.query.filter_by(satate=True).order_by(GenericPayment.date.desc()).all()
+    totalIn=0.0
+    totalOut=0.0
+    ingresos = list(filter(lambda el: el.itsIn, generic))
+    egresos = list(filter(lambda el: not(el.itsIn), generic))
+    for pay in generic:
+        if pay.itsIn:
+            totalIn += pay.monto
+        else:
+            totalOut += pay.monto
+    return render_template(
+        'generic_pay_list.html',
+        totalIn = totalIn,
+        totalOut=totalOut,
+        egresos = egresos,
+        ingresos = ingresos)
 
 # BACKUP FORMA ANTIGUA
 # strptime(c['proveedor']['fecha'],"%Y-%m-%d")
@@ -1122,7 +1163,9 @@ def borrar(id, modelo):
     db.session.commit()
 
 
-@app.route('/tet')
-def pagosycobros():
-    cobro = Cobro.query.all()
-    return render_template('tet.html', cobro = cobro)
+@app.route('/DBRST')
+def resetDB():
+    db.drop_all()
+    db.create_all()
+    flash('DB RESET OK!')
+    return redirect(url_for('index'))

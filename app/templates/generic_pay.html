@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="section" style="max-width:50%">
+<form action="" class="form" method="POST">
+  {{form.hidden_tag()}}
+  <div class="field">
+    {{form.monto.label}}
+    {{form.monto()}}
+  </div>
+  <div class="field">
+    {{form.concept.label}}
+    {{form.concept()}}
+  </div>
+  <div class="field">
+    {{form.itsIn.label}}
+    {{form.itsIn()}}
+  </div>
+  <div class="field">
+    {{form.submit()}}
+  </div>
+</form>
+</div>
+{% endblock content %}

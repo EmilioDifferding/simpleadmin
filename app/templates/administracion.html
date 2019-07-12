@@ -59,16 +59,45 @@
                     <p><strong>Cobro Clientes B:</strong> ${{cobranzas_b}}</p>
                     <p><strong>Total Cobro a Clientes:</strong> ${{cobranzas_a + cobranzas_b}}</p>
                 </div>
-            <p>{{cobros}}</p>
         </div>
         <div class="column card">
             <h2 class="subtitle card-header"><strong>Acumulado productos</strong></h2>
-            <p><strong>Acumulado productos A:</strong> ${{acum[0]}}</p>
-            <p><strong>Acumulado productos B:</strong> ${{acum[1]}}</p>
-            <p><strong>Acumulado Total en productos:</strong> ${{acum[2]}}</p>
+            <div class="card-content">
+                <p><strong>Acumulado productos A:</strong> ${{acum[0]}}</p>
+                <p><strong>Acumulado productos B:</strong> ${{acum[1]}}</p>
+                <p><strong>Acumulado Total en productos:</strong> ${{acum[2]}}</p>
+            </div>
+            
+            <div class="card-content">
+                <table class="table">
+                    <thead>
+                        <th>Cheuques</th>
+                        <th>Emitidos</th>
+                        <th>Recibidos</th>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>A</th>
+                            <td>$ {{coa}}</td>
+                            <td>$ {{cia}}</td>
+                        </tr>
+                        <tr>
+                            <th>B</th>
+                            <td>$ {{cia}}</td>
+                            <td>$ {{cib}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     <div class="section columns-none has-text-centered">
+        
+        <p class="title"><strong>Cheques</strong></p>
+        <p>recibidos A: {{cia}}</p>
+        <p>recibidos B: {{cib}}</p>
+        <p>emitidos A: {{coa}}</p>
+        <p>emitidos B: {{cob}}</p>
         <p class="title"><strong>Balance</strong></p>
         <p>{{balance}}</p>
         <p class="title"><strong>caja</strong></p>

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+
+  <div class="section">
+    <div class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <p class="title">Egresos: ${{totalOut}}</p>
+        </div>
+        <div class="level-item">
+          <p class="title">Ingresos: ${{totalIn}}</p>
+        </div>
+      </div>
+      <div class="level-right">
+        <a href="{{url_for('generic_pay')}}" class="level-item button is-link">Cargar pago</a>
+      </div>
+    </div>
+
+    <div class="container columns">
+      <div class="column">
+        <h3 class="subtitle">Egresos</h3>
+        <table class="table">
+          <thead>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Monto</th>
+            <th></th>
+          </thead>
+          <tbody>
+            {% for egreso in egresos %}
+              <tr>
+                <td>{{egreso.date.strftime("%d/%m/%y")}}</td>
+                <td>{{egreso.concept}}</td>
+                <td>$ {{egreso.monto}}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="column">
+        <h3 class="subtitle">Ingresos</h3>
+        <table class="table">
+          <thead>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Monto</th>
+          </thead>
+          <tbody>
+            {% for ingreso in ingresos %}
+              <tr>
+                <td>{{ingreso.date.strftime("%d/%m/%y")}}</td>
+                <td>{{ingreso.concept}}</td>
+                <td>$ {{ingreso.monto}}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}

@@ -7,6 +7,12 @@ from datetime import date, datetime
 from app.models import Proveedor,Producto,Cliente
 
 
+class GenericPayForm(FlaskForm):
+    monto = FloatField('Monto del pago', validators=[DataRequired()], render_kw={'class':'input','type':'number'})
+    concept = TextAreaField('Concepto del pago', validators=[DataRequired()], render_kw={'class':'input','type':'textarea'})
+    itsIn = BooleanField('Marcar si es ingreso de dinero', default=False, render_kw={'class':'checkbox'})
+    submit = SubmitField('Aceptar', render_kw={'class':' submit button is-info'})
+
 class CargarChequeraForm(FlaskForm):
     numero_chequera = IntegerField('Numero de chequera', validators=[DataRequired()], render_kw={'class':'input'})
     banco = StringField('Entidad Bancaria',validators=[DataRequired()],render_kw={'class':'input'})

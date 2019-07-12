@@ -162,6 +162,26 @@ class Venta(db.Model):
     #Clase que guarde los pagos, con la info de cada cliente
     #Monto, fecha, nombre cliente etc
 
+class GenericPayment(db.Model):
+    id = db.Column(db.Integer, unique=True, primary_key=True, index=True)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    itsIn = db.Column(db.Boolean, default=False)
+    concept = db.Column(db.String(240))
+    monto = db.Column(db.Float)
+    satate = db.Column(db.Boolean, default=True)
+
+    def borrar(self):
+        db.session.remove(self)
+        db.session.commit()
+
+    def __repr__(self):
+        if sel.itsIn:
+            return '<Ingreso ${},concepto{}'.format(self.monto, self.concept)
+        else:
+            return '<Pago ${},concepto{}'.format(self.monto, self.concept)
+
+
+
 class Cobro(db.Model):
     id = db.Column(db.Integer, unique=True, primary_key=True, index=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), index=True)
