@@ -440,8 +440,8 @@ class Compra(db.Model):
             factura = self.factura_proveedor,
             entrada = False
         )
-        actualizar_saldo_flete(suma=False)
         actualizar_saldo_proveedor(suma=False)
+        actualizar_saldo_flete(suma=False)
         self.satate = False
 
     def __repr__(self):

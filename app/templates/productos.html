@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
+<h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_producto')}}">Cargar producto nuevo</a></h5>
+
 <table class="table">
     <thead>
         <tr>
@@ -24,5 +26,4 @@
         {% endfor %}
     </tbody>
 </table>
-<h5 class="button is-primary subtitle"><a class="has-text-white" href="{{url_for('cargar_producto')}}">Cargar producto nuevo</a></h5>
 {% endblock content %}

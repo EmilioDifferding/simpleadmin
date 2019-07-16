@@ -570,61 +570,143 @@ def borrar_compra(id):
 ###########FIN COMPRAS###########
 #################################
 #TODO: Redefinir las peticiones teniendo en cuenta las facturas
+
 @app.route('/administracion')
 def administracion():
 
-    def split_montos(transacciones):
+    def split_montos(transacciones, tipo):
         '''PAGOS Y COBRANZAS
         [0]=EF_A, [1]=EF_B, [2]=CHAC_A, [3]=CHAC_B,[4]=CH_A,[5]=CH_B
         devuelve una lista con las sumatorias de los montos de cheques y efectivo en A y B'''
-        efectivo_a = 0.0
-        efectivo_b = 0.0
-        cheque_b = 0.0
-        cheque_a = 0.0
-        ch_acred_a = 0.0
-        ch_acred_b = 0.0
-        total_a = 0.0
-        total_b = 0.0
-        for transaccion in transacciones:
-            if transaccion.factura:
-                #Transaccion con factura
-                total_a += transaccion.monto
-                if transaccion.hay_cheque:
-                    if not(transaccion.entrada):
-                        for cheque in transaccion.cheques:
-                            if cheque.emisor !='Propietario':
-                                if not(cheque.acreditado):
-                                    cheque_a += cheque.importe
-                                else:
-                                    ch_acred_a += cheque.importe
+        # Los cheques redireccionados no deben contabilizarse
+        # Para que un cheque sea identificado como redireccionado tiene que ser : [cheque.es_entrada= False] y [cheque.es_de_tercero = True]
+        def contab(transacciones, tipo):
+            '''para entradas [tipo = True]'''
+            global efectivo_a
+            global efectivo_b
+            global cheque_a
+            global cheque_b
+            global ch_acred_a
+            global ch_acred_b
+            global total_a
+            global total_b
+
+            efectivo_a = 0.0
+            efectivo_b = 0.0
+            cheque_a = 0.0
+            cheque_b = 0.0
+            ch_acred_a = 0.0
+            ch_acred_b = 0.0
+            total_a = 0.0
+            total_b = 0.0
+            print('Contab() fue llamada')
+            if tipo == True:
+                for transaccion in transacciones:
+                    if transaccion.factura:
+                        total_a += transaccion.monto
+                        #se contabiliza en A
+                        if transaccion.hay_cheque:
+                            #aca se contabilizan los cheques
+                            if transaccion.cheques is not None:
+                                print('\t\tLa transaccion: {} de cliente: {} tiene algunos cheques A'.format(transaccion.id, transaccion.cliente.nombre))
+                                for cheque in transaccion.cheques:
+                                    if not cheque.acreditado:
+                                        cheque_a += cheque.importe
+                                    else:
+                                        ch_acred_a += cheque.importe
+                        else:
+                            efectivo_a += transaccion.monto
                     else:
-                        for cheque in transaccion.cheques:
-                            if not(cheque.acreditado):
-                                cheque_a += cheque.importe
-                            else:
-                                ch_acred_a += cheque.importe
-                else:
-                    efectivo_a += transaccion.monto
-            else:
-                #Transaccion sin factura
-                total_b += transaccion.monto
-                if transaccion.hay_cheque:
-                    if not(transaccion.entrada):
-                        for cheque in transaccion.cheques:
-                            if cheque.emisor !='Propietario':
-                                if not(cheque.acreditado):
-                                    cheque_b += cheque.importe
-                                else:
-                                    ch_acred_b += cheque.importe
+                        #Se contabiliza en B
+                        total_b += transaccion.monto
+                        if transaccion.hay_cheque:
+                            #aca se contabilizan los cheques
+                            if transaccion.cheques is not None:
+                                print('\t\tLa transaccion: {} de cliente: {} tiene algunos cheques B'.format(transaccion.id, transaccion.cliente.nombre))
+                                for cheque in transaccion.cheques:
+                                    if not cheque.acreditado:
+                                        cheque_b += cheque.importe
+                                    else:
+                                        ch_acred_b += cheque.importe
+                        else:
+                            efectivo_b += transaccion.monto
+            else: #Si el tipo de transaccion es salida, osea un pago a un proveedor
+                for transaccion in transacciones:
+                    if transaccion.factura: #se contabiliza en A
+                        total_a += transaccion.monto
+                        if transaccion.hay_cheque: #aca se contabilizan los cheques
+                            for cheque in transaccion.cheques:
+                                if not cheque.es_de_tercero: 
+                                    if not cheque.acreditado:
+                                        cheque_a += cheque.importe
+                                    else:
+                                        ch_acred_a += cheque.importe
+                        else:
+                            efectivo_a += transaccion.monto
                     else:
-                        for cheque in transaccion.cheques:
-                            if not(cheque.acreditado):
-                                cheque_b += cheque.importe
-                            else:
-                                ch_acred_b += cheque.importe
-                else:
-                    efectivo_b += transaccion.monto
+                        #Se contabiliza en B
+                        total_b = transaccion.monto
+                        if transaccion.hay_cheque:
+                            #aca se contabilizan los cheques
+                            for cheque in transaccion.cheques:
+                                if not cheque.es_de_tercero:
+                                    if not cheque.acreditado:
+                                        cheque_b += cheque.importe
+                                    else:
+                                        ch_acred_b += cheque.importe
+                        else:
+                            efectivo_b += transaccion.monto
+
+
+
+        # for transaccion in transacciones:
+        #     if transaccion.factura:
+        #         #Transaccion con factura
+        #         total_a += transaccion.monto
+        #         if transaccion.hay_cheque:
+        #             if not(transaccion.entrada):
+        #                 for cheque in transaccion.cheques:
+        #                     if cheque.emisor !='Propietario':
+        #                         if not(cheque.acreditado):
+        #                             cheque_a += cheque.importe
+        #                         else:
+        #                             ch_acred_a += cheque.importe
+        #                     else:
+        #                         if not(cheque.acreditado):
+        #                             cheque_a += cheque.importe
+        #                         else:
+        #                             ch_acred_a += cheque.importe
+        #             else:
+        #                 for cheque in transaccion.cheques:
+        #                     if not(cheque.acreditado):
+        #                         cheque_a += cheque.importe
+        #                         print(cheque_a)
+        #                     else:
+        #                         ch_acred_a += cheque.importe
+        #         else:
+        #             efectivo_a += transaccion.monto
+        #     else:
+        #         #Transaccion sin factura
+        #         total_b += transaccion.monto
+        #         if transaccion.hay_cheque:
+        #             if not(transaccion.entrada):
+        #                 for cheque in transaccion.cheques:
+        #                     print("ESTRE ACAAA")
+        #                     if cheque.emisor !='Propietario':
+        #                         if not(cheque.acreditado):
+        #                             cheque_b += cheque.importe
+        #                         else:
+        #                             ch_acred_b += cheque.importe
+        #             else:
+        #                 for cheque in transaccion.cheques:
+        #                     if not(cheque.acreditado):
+        #                         cheque_b += cheque.importe
+        #                     else:
+        #                         ch_acred_b += cheque.importe
+        #         else:
+        #             efectivo_b += transaccion.monto
         
+        contab(transacciones, tipo)
         return[
             round(efectivo_a,2), 
             round(efectivo_b,2), 
@@ -678,8 +760,8 @@ def administracion():
     entradas = list(filter(lambda e: e.entrada, inOut))
     salidas = list(filter(lambda e: not(e.entrada), inOut))
 
-    listIn = split_montos(entradas)
-    listOut = split_montos(salidas)
+    listIn = split_montos(entradas, tipo = True)
+    listOut = split_montos(salidas, tipo = False)
     saldoClientes = getSaldos(clientes)
     saldoProveedores = getSaldos(proveedores)
     acumuladoProductos = getAcumuladoProductos(productos)
@@ -909,7 +991,7 @@ def pagar():
                 for id in req['cheq']['cids']:
                     c = Cheque.query.filter_by(id=id).first()
                     c.es_entrada =False
-                    c.emitir()
+                    # c.emitir()
                     pago.cheques.append(c)
                     c.proveedor = proveedor
                     c.get_destino()
@@ -1110,7 +1192,7 @@ def listar_cheques():
     cheques_all = Cheque.query.filter_by(state=True).filter_by(emitido=True).all()
     cheques_in = filter(lambda cheque: cheque.es_entrada and(cheque.cliente!=None), cheques)
     cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None) and(cheque.es_de_tercero !=True), cheques)
-    cheques_redireccionados = filter(lambda cheque: (cheque.es_de_tercero is True) and (cheque.emitido is True), cheques)
+    cheques_redireccionados = filter(lambda cheque: (cheque.es_de_tercero is True) and (cheque.es_entrada is not True), cheques)
     return render_template(
         'lista-cheques.html',
         cheques=cheques_all,
