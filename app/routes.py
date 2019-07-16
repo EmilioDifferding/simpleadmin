@@ -657,55 +657,6 @@ def administracion():
                         else:
                             efectivo_b += transaccion.monto
 
-
-
-        # for transaccion in transacciones:
-        #     if transaccion.factura:
-        #         #Transaccion con factura
-        #         total_a += transaccion.monto
-        #         if transaccion.hay_cheque:
-        #             if not(transaccion.entrada):
-        #                 for cheque in transaccion.cheques:
-        #                     if cheque.emisor !='Propietario':
-        #                         if not(cheque.acreditado):
-        #                             cheque_a += cheque.importe
-        #                         else:
-        #                             ch_acred_a += cheque.importe
-        #                     else:
-        #                         if not(cheque.acreditado):
-        #                             cheque_a += cheque.importe
-        #                         else:
-        #                             ch_acred_a += cheque.importe
-        #             else:
-        #                 for cheque in transaccion.cheques:
-        #                     if not(cheque.acreditado):
-        #                         cheque_a += cheque.importe
-        #                         print(cheque_a)
-        #                     else:
-        #                         ch_acred_a += cheque.importe
-        #         else:
-        #             efectivo_a += transaccion.monto
-        #     else:
-        #         #Transaccion sin factura
-        #         total_b += transaccion.monto
-        #         if transaccion.hay_cheque:
-        #             if not(transaccion.entrada):
-        #                 for cheque in transaccion.cheques:
-        #                     print("ESTRE ACAAA")
-        #                     if cheque.emisor !='Propietario':
-        #                         if not(cheque.acreditado):
-        #                             cheque_b += cheque.importe
-        #                         else:
-        #                             ch_acred_b += cheque.importe
-        #             else:
-        #                 for cheque in transaccion.cheques:
-        #                     if not(cheque.acreditado):
-        #                         cheque_b += cheque.importe
-        #                     else:
-        #                         ch_acred_b += cheque.importe
-        #         else:
-        #             efectivo_b += transaccion.monto
-        
         contab(transacciones, tipo)
         return[
             round(efectivo_a,2), 
@@ -1190,12 +1141,17 @@ def listar_pagos():
 def listar_cheques():
     cheques = Cheque.query.filter_by(state=True).all()
     cheques_all = Cheque.query.filter_by(state=True).filter_by(emitido=True).all()
-    cheques_in = filter(lambda cheque: cheque.es_entrada and(cheque.cliente!=None), cheques)
-    cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None) and(cheque.es_de_tercero !=True), cheques)
+    cheques_in = filter(lambda cheque: cheque.es_entrada and(cheque.acreditado == False), cheques)
+    cheques_out = filter(lambda cheque: not(cheque.es_entrada) and (cheque.proveedor !=None) and(cheque.es_de_tercero !=True) and (cheque.acreditado == False), cheques)
     cheques_redireccionados = filter(lambda cheque: (cheque.es_de_tercero is True) and (cheque.es_entrada is not True), cheques)
+    acred_in =list(filter(lambda cheque: cheque.es_entrada and cheque.acreditado, cheques))
+    acred_out= list(filter(lambda cheque: (cheque.es_entrada != True) and (cheque.acreditado == True) and cheque.emitido, cheques))
+    print(list(acred_in))
     return render_template(
         'lista-cheques.html',
-        cheques=cheques_all,
+        acred_in = acred_in,
+        acred_out = acred_out,
+        cheques=cheques,
         cheques_in=cheques_in,
         cheques_out=cheques_out,
         chredirect = cheques_redireccionados,
@@ -1205,7 +1161,7 @@ def listar_cheques():
 def acreditar_cheque(id):
     cheque = Cheque.query.filter_by(id=id).first()
     cheque.acreditado = True
-    cheque.state= False
+    # cheque.state= False
     db.session.commit()
     return redirect(url_for('listar_cheques'))
 

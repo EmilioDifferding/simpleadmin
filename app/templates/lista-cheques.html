@@ -7,6 +7,8 @@
                 <li id="c" class="btn"><a onclick="openTab('cobros')">Emitidos</a></li>
                 <li id="s" class="btn"><a onclick="openTab('servicios')">Recibidos</a></li>
                 <li id='v' class="btn"><a onclick="openTab('ventas')">Redireccionados</a></li>
+                <li id="acred" class="btn"><a onclick="openTab('acredIn')">acreditados</a></li>
+                <li id="acredot" class="btn"><a onclick="openTab('acredOut')">debitados</a></li>
             </ul>
         </div>
 
@@ -96,4 +98,69 @@
                         {% endfor %}
                     </tbody>
                 </table>
+               {##} <table class="table is-heverable" id="acredIn" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Número</th>
+                            <th>Banco</th>
+                            <th>Emisor</th>
+                            <th>importe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in acred_in %}
+                            <tr>
+                                <td>{{c.fecha_cobro.strftime("%d/%m/%Y")}}</td>
+                                <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
+                                <td>{{c.banco}}</td>
+                                <td>{{c.emisor}}</td>
+                                <td>{{c.importe}}</td>
+                        {% endfor %}
+                    </tbody>
+                </table>{##}
+                <table class="table is-heverable" id="ventas" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Número</th>
+                                <th>Banco</th>
+                                <th>Emisor</th>
+                                <th>Destino</th>
+                                <th>importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in chredirect %}
+                                <tr>
+                                    <td>{{c.fecha.strftime("%d/%m/%Y")}}</td>
+                                    <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
+                                    <td>{{c.banco}}</td>
+                                    <td>{{c.emisor}}</td>
+                                    <td>{{c.destino}}</td>
+                                    <td>{{c.importe}}</td>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+            {##}   <table class="table is-heverable" id="acredOut" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Número</th>
+                            <th>Banco</th>
+                            <th>Emisor</th>
+                            <th>importe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in acred_out %}
+                            <tr>
+                                <td>{{c.fecha_cobro.strftime("%d/%m/%Y")}}</td>
+                                <td><a href="{{url_for('detalle_cheque', id=c.id)}}">{{c.numero}}</a></td>
+                                <td>{{c.banco}}</td>
+                                <td>{{c.destino}}</td>
+                                <td>{{c.importe}}</td>
+                        {% endfor %}
+                    </tbody>
+                </table>{##}
 {% endblock content %}
