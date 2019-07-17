@@ -8,4 +8,5 @@ modulos.txt
 NOTAS.txt
 migrations/
 __pycache__/
-
+dockerfile
+boot.sh
