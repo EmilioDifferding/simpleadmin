@@ -747,7 +747,8 @@ def administracion():
         cib = listIn[5],
         coa = listOut[4],
         cob = listOut[5],
-        gastos = gastos,
+        g_entrada = gasto_entrada,
+        g_salida = gasto_salida,
     )
 
 
@@ -1068,8 +1069,6 @@ def cargar_chequera():
         
     return render_template('formulario-de-carga.html', form=form, title='Cargar Chequera', atras=url_for('index'))
     
-
-
 @app.route('/cheque-tercero/<id>',methods=['GET','POST'])
 def cheque_tercero(id):
     form = ChequedeTercero()
@@ -1127,6 +1126,7 @@ def filtrar_cobros():
 
         return jsonify(lista)
     pass
+
 @app.route('/registro-de-cobros')
 def listar_cobros():
     cobros = Cobro.query.filter_by(entrada=True).order_by(Cobro.fecha.desc()).all()
@@ -1185,6 +1185,8 @@ def borrar_cobro(id):
     return redirect(url_for('listar_cobros'))
 
 
+
+
 def sumar_saldo(modelo, id, monto):
     print('Ejecuta la suma del saldo')
     modelo = modelo.query.filter_by(id=id).first()
@@ -1203,6 +1205,7 @@ def borrar(id, modelo):
 
 @app.route('/DBRST')
 def resetDB():
+    '''Reset de db borra toda la estructura y la recrea desde cero'''
     db.drop_all()
     db.create_all()
     flash('DB RESET OK!')
