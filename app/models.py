@@ -62,7 +62,7 @@ class Cliente(db.Model):
         else:
             self.state = False
             db.session.commit()
-            return redirect(url_for('Cliente eliminado con exito'))
+            return redirect(url_for('listar_clientes'))
     
     def restaurar(self):
         self.state = True
@@ -151,6 +151,7 @@ class Venta(db.Model):
         self.actualizar_saldo_proveedor(suma=False)
 
         self.state=False
+        db.session.commit()
 
         #TODO: Terminar restauracion del saldo de proveedor y borrado de esa compra de servicio
 
@@ -171,7 +172,7 @@ class GenericPayment(db.Model):
     satate = db.Column(db.Boolean, default=True)
 
     def borrar(self):
-        db.session.remove(self)
+        db.session.delete(self)
         db.session.commit()
 
     def __repr__(self):
@@ -179,8 +180,6 @@ class GenericPayment(db.Model):
             return '<Ingreso ${},concepto{}'.format(self.monto, self.concept)
         else:
             return '<Pago ${},concepto{}'.format(self.monto, self.concept)
-
-
 
 class Cobro(db.Model):
     id = db.Column(db.Integer, unique=True, primary_key=True, index=True)
@@ -210,9 +209,11 @@ class Cobro(db.Model):
                 self.proveedor.saldo_b -= self.monto
     
     def borrar(self):
+        '''Borra el cobro/pago y si contiene cheques los borra tambien'''
         self.state = False
-        for c in self.cheques:
-            c.state = False
+        if self.hay_cheque:
+            for c in self.cheques:
+                c.state = False
         if self.entrada:
             self.cliente.actualizar_saldo(
                 monto = self.monto,
@@ -279,6 +280,8 @@ class Cheque(db.Model):
         delta = self.fecha_cobro - datetime.today()
         return delta.days+1
 
+    def borrar(self):
+        self.state = False
 
 class Chequera(db.Model):
     id =db.Column(db.Integer, primary_key=True, index=True)
@@ -334,6 +337,10 @@ class Chequera(db.Model):
                 total += c.importe
         return round(total, 2)
 
+    def borrar(self):
+        for cheque in self.cheques:
+            cheque.borrar()
+            self.state = False
 
 class Proveedor(db.Model):
     '''
@@ -375,6 +382,19 @@ class Proveedor(db.Model):
                 self.saldo_b -= monto
 
     #TODO: Faltan metodos de borrar proveedor....
+    def borrar(self):
+        if (self.saldo_a > 0 | saldo_a < 0 | saldo_b < 0 | saldo_b > 0):
+            flash('No puede borrarse este proveedor. Posee saldos pendientes')
+            return redirect(url_for('detalle_proveedor', id=self.id))
+        else:
+            self.state = False
+            db.session.commit()
+            return redirect(url_for('listar_proveedores'))
+    
+    def restaurar(self):
+        self.state = True
+        flash ('Proveedor restaurado, puede volver a operar con él')
+        return redirect(url_for('detalle_proveedor', id=self.id))
 
     def __repr__(self):
         return '<Proveedor {}>'.format(self.nombre)
