@@ -115,7 +115,7 @@ def detalle_producto(id):
 @app.route('/producto/<id>/borrar')
 def borrar_producto(id):
     producto = Producto.query.filter_by(id=id).first_or_404()
-    borrar(id, Producto)
+    producto.borrar()
     flash('producto: {nombre} borrado con exito.'.format(nombre=producto.nombre))
     return redirect(url_for('listar_productos'))
 
@@ -144,7 +144,7 @@ def cargar_cliente():
 
 @app.route('/clientes')
 def listar_clientes():
-    clientes = Cliente.query.all()
+    clientes = Cliente.query.filter_by(state=True).all()
     return render_template('clientes.html', title='Lista de clientes', clientes=clientes)
 
 @app.route('/cliente/<id>')
@@ -187,9 +187,12 @@ def editar_cliente(id):
 
 @app.route('/cliente/<id>/borrar')
 def borrar_cliente(id):
-    borrar(id, Cliente)
-    flash('Cliente Borrado')
-    return redirect(url_for('listar_clientes'))
+    cliente = Cliente.query.filter_by(id=id).first_or_404()
+    if cliente.borrar():
+        flash('Cliente Borrado')
+        return redirect(url_for('listar_clientes'))
+    else:
+        return redirect(url_for('detalle_cliente',id=id))
 
 #################################
 ##FIN DMINISTRACION DE CLIENTES##
@@ -221,7 +224,7 @@ def cargar_proveedor():
 
 @app.route('/proveedores')
 def listar_proveedores():
-    proveedores = Proveedor.query.order_by('nombre').all()
+    proveedores = Proveedor.query.filter_by(state=True).order_by('nombre').all()
     return render_template('proveedores.html', proveedores=proveedores, title='Lista de proveedores')
 
 @app.route('/proveedor/<id>/editar', methods=['GET','POST'])
@@ -262,9 +265,14 @@ def detalle_proveedor(id):
 
 @app.route('/borrar/<id>/proveedor')
 def borrar_proveedor(id):
-    borrar(id, Proveedor)
-    flash('Proveedor borrado')
-    return redirect(url_for('listar_proveedores'))
+    proveedor = Proveedor.query.filter_by(id = id).first_or_404()
+    if proveedor.borrar():
+        flash('Proveedor borrado')
+        db.session.commit()
+        return redirect(url_for('listar_proveedores'))
+    else:
+        flash('no puede borrarse porque hay saldos pendientes')
+        return redirect(url_for('detalle_proveedor',id=id))
 
 #################################
 #########FIN PROVEEDORES#########
@@ -608,7 +616,7 @@ def administracion():
                         if transaccion.hay_cheque:
                             #aca se contabilizan los cheques
                             if transaccion.cheques is not None:
-                                print('\t\tLa transaccion: {} de cliente: {} tiene algunos cheques A'.format(transaccion.id, transaccion.cliente.nombre))
+                                # print('\t\tLa transaccion: {} de cliente: {} tiene algunos cheques A'.format(transaccion.id, transaccion.cliente.nombre))
                                 for cheque in transaccion.cheques:
                                     if not cheque.acreditado:
                                         cheque_a += cheque.importe

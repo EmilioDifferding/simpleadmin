@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from app import db
 
 # Tablas relacionales
@@ -56,13 +57,13 @@ class Cliente(db.Model):
 
 
     def borrar(self):
-        if (self.saldo_a > 0 | saldo_a < 0 | saldo_b < 0 | saldo_b > 0):
+        if ((self.saldo_a > 0.0) | (self.saldo_a < 0.0) | (self.saldo_b < 0.0) | (self.saldo_b > 0.0)):
             flash('No puede borrarse este cliente. Posee saldos pendientes')
-            return redirect(url_for('detalle_cliente', id=self.id))
+            return False
         else:
             self.state = False
             db.session.commit()
-            return redirect(url_for('listar_clientes'))
+            return True
     
     def restaurar(self):
         self.state = True
@@ -383,13 +384,12 @@ class Proveedor(db.Model):
 
     #TODO: Faltan metodos de borrar proveedor....
     def borrar(self):
-        if (self.saldo_a > 0 | saldo_a < 0 | saldo_b < 0 | saldo_b > 0):
-            flash('No puede borrarse este proveedor. Posee saldos pendientes')
-            return redirect(url_for('detalle_proveedor', id=self.id))
+        if ((self.saldo_a > 0.0) | (self.saldo_a < 0.0) | (self.saldo_b < 0.0) | (self.saldo_b > 0.0)):
+            return False
         else:
             self.state = False
-            db.session.commit()
-            return redirect(url_for('listar_proveedores'))
+            
+            return True
     
     def restaurar(self):
         self.state = True
